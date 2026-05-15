@@ -1,21 +1,58 @@
 "use client"
 
 import { useMemo } from "react"
-import { TrendingUp, Target } from "lucide-react"
+import { TrendingUp, Camera, Tent, UtensilsCrossed, Target } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatEur } from "@/lib/domain-extras"
+import { useCatalogueSync } from "@/hooks/use-catalogue-sync"
 
-/** Ventes upsell non persistées en base — affichage honnête en attendant la V1.1. */
-const REVENUE_TRACKING_ENABLED = false
+const ICONS = [Camera, Tent, UtensilsCrossed] as const
 
+/**
+ * Aperçu visuel démo — agrège les prix HT des extras visibles du catalogue
+ * (pas des ventes enregistrées).
+ */
 export function FinanceColumn() {
-  const monthLabel = useMemo(
-    () =>
-      new Date().toLocaleDateString("fr-FR", {
-        month: "long",
-        year: "numeric",
-      }),
-    [],
-  )
+  const { extras, loading } = useCatalogueSync()
+
+  const { upsells, monthLabel, totalHt, goalHt, progress } = useMemo(() => {
+    const visible = extras
+      .filter((e) => e.visible)
+      .sort((a, b) => b.priceEur - a.priceEur)
+      .slice(0, 3)
+
+    const total = visible.reduce((sum, e) => sum + e.priceEur, 0)
+    const goal = Math.round(total / 0.82) || 1
+    const pct = Math.min(100, Math.round((total / goal) * 100))
+
+    const now = new Date()
+    const monthLabel = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+
+    const upsells = visible.map((item, i) => {
+      const Icon = ICONS[i] ?? Camera
+      const styles = [
+        { color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200/80" },
+        { color: "text-sky-600", bg: "bg-sky-50", ring: "ring-sky-200/80" },
+        { color: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200/80" },
+      ][i]!
+      return {
+        label: item.label,
+        amount: formatEur(item.priceEur),
+        icon: Icon,
+        ...styles,
+      }
+    })
+
+    return {
+      upsells,
+      monthLabel,
+      totalHt: total,
+      goalHt: goal,
+      progress: pct,
+    }
+  }, [extras])
+
+  const remaining = Math.max(0, goalHt - totalHt)
 
   return (
     <section className="flex flex-col overflow-hidden rounded-md border border-border bg-card shadow-sm">
@@ -33,21 +70,20 @@ export function FinanceColumn() {
 
       <article className="flex flex-1 flex-col justify-between gap-6 px-6 py-6">
         <section>
-          <p className="flex flex-wrap items-end gap-3">
-            <span className="text-5xl font-bold tracking-tight text-muted-foreground/80">
-              {REVENUE_TRACKING_ENABLED ? `+ ${formatEur(0)}` : "—"}
-            </span>
-            {!REVENUE_TRACKING_ENABLED ? (
-              <span className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                À venir
-              </span>
-            ) : null}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {REVENUE_TRACKING_ENABLED
-              ? "générés ce mois en upsells"
-              : "Le suivi des ventes upsell sera disponible dans une prochaine version."}
-          </p>
+          {loading ? (
+            <Skeleton className="h-14 w-40" />
+          ) : (
+            <>
+              <p className="flex items-end gap-3">
+                <span className="text-5xl font-bold tracking-tight text-primary">
+                  + {formatEur(totalHt)}
+                </span>
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Projection à partir du catalogue visible (démo)
+              </p>
+            </>
+          )}
 
           <section className="mt-6">
             <p className="mb-2 flex items-center justify-between">
@@ -55,31 +91,60 @@ export function FinanceColumn() {
                 <Target className="h-4 w-4" />
                 <span className="text-xs font-medium">Objectif mensuel</span>
               </span>
-              <span className="text-sm font-bold tracking-tight text-muted-foreground">—</span>
+              <span className="text-sm font-bold tracking-tight text-foreground">{progress}%</span>
             </p>
             <span className="block h-2.5 w-full rounded-full bg-muted">
               <span
-                className="block h-full w-0 rounded-full bg-primary/40 transition-all duration-500"
-                aria-hidden
+                className="block h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${progress}%` }}
               />
             </span>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Définissez vos objectifs lorsque le suivi des revenus sera activé.
+              {loading ? (
+                <Skeleton className="inline-block h-4 w-48" />
+              ) : (
+                <>
+                  Encore <span className="font-medium text-foreground">{formatEur(remaining)}</span> pour
+                  atteindre l&apos;objectif ({formatEur(goalHt)} HT)
+                </>
+              )}
             </p>
           </section>
         </section>
 
         <section>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Ventes par extra ce mois
+            Top extras visibles
           </p>
-          <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
-            <p className="text-sm font-medium text-foreground">Aucune donnée de vente</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Les montants par extra s&apos;afficheront ici une fois le module de facturation upsell
-              branché.
-            </p>
-          </div>
+          {loading ? (
+            <ul className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li key={i}>
+                  <Skeleton className="h-12 w-full" />
+                </li>
+              ))}
+            </ul>
+          ) : upsells.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun extra visible dans le catalogue.</p>
+          ) : (
+            <ul className="space-y-3">
+              {upsells.map((item) => {
+                const Icon = item.icon
+                return (
+                  <li
+                    key={item.label}
+                    className={`flex items-center justify-between rounded-md px-3 py-2.5 ring-1 ${item.bg} ${item.ring}`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon className={`h-4 w-4 ${item.color}`} />
+                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    </span>
+                    <span className={`text-sm font-bold tabular-nums ${item.color}`}>{item.amount}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </section>
       </article>
     </section>

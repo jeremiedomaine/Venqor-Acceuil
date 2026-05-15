@@ -1,123 +1,181 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { Users, Briefcase, Smartphone, Package, CalendarDays } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Users, MessageSquare, Briefcase, Smartphone, Package } from "lucide-react"
+import { MessagingSheet } from "@/components/upstay/messaging-sheet"
+import { totalUnreadMessages } from "@/lib/messaging-clients"
 import { countPrestatairesActifs } from "@/lib/prestataires"
-import { countActiveDomainApps } from "@/lib/domain-apps"
-import { countUniqueClients, countUpcomingEvents } from "@/lib/dashboard-stats"
-import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
-import { usePrestatairesSync } from "@/hooks/use-prestataires-sync"
-import { useDomainAppsSync } from "@/hooks/use-domain-apps-sync"
+import { countActiveDomainApps, DOMAIN_APPS_SEED } from "@/lib/domain-apps"
 
-const cardClass =
-  "group flex flex-col gap-3 rounded-md border border-border bg-card px-5 py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+/**
+ * Barre KPI — chiffres pensés pour la démo (ex. domaine Lauriers).
+ * Les valeurs ne reflètent pas obligatoirement les données Supabase en temps réel.
+ */
+const DEMO_CLIENTS = "142"
 
-function KpiValue({ loading, value }: { loading: boolean; value: number }) {
-  if (loading) return <Skeleton className="h-8 w-12" />
-  return (
-    <p className="text-2xl font-bold leading-none tracking-tight text-foreground tabular-nums">
-      {value}
-    </p>
-  )
-}
+const kpis: {
+  label: string
+  value: string
+  sub: string
+  icon: typeof Users
+  iconColor: string
+  iconBg: string
+  badge: boolean | null
+  href?: string
+  openMessaging?: boolean
+}[] = [
+  {
+    label: "Clients",
+    value: DEMO_CLIENTS,
+    sub: "au total",
+    icon: Users,
+    iconColor: "text-muted-foreground",
+    iconBg: "bg-muted",
+    badge: null,
+    href: "/evenements",
+  },
+  {
+    label: "Messagerie",
+    value: "5",
+    sub: "non lus",
+    icon: MessageSquare,
+    iconColor: "text-primary",
+    iconBg: "bg-primary/10",
+    badge: true,
+    openMessaging: true,
+  },
+  {
+    label: "Prestataires",
+    value: "18",
+    sub: "actifs",
+    icon: Briefcase,
+    iconColor: "text-amber-600",
+    iconBg: "bg-amber-50",
+    badge: null,
+    href: "/prestataires",
+  },
+  {
+    label: "Mes Apps",
+    value: "3",
+    sub: "actives",
+    icon: Smartphone,
+    iconColor: "text-primary",
+    iconBg: "bg-primary/10",
+    badge: null,
+    href: "/mes-apps",
+  },
+]
 
 export function KpiBar() {
-  const { events, loading: eventsLoading } = useDomainEventsSync()
-  const { prestataires, loading: prestatairesLoading } = usePrestatairesSync()
-  const { apps, loading: appsLoading } = useDomainAppsSync()
+  const [messagingOpen, setMessagingOpen] = useState(false)
+  const unreadTotal = totalUnreadMessages()
 
-  const clientCount = countUniqueClients(events)
-  const upcomingCount = countUpcomingEvents(events)
-  const prestatairesActifs = countPrestatairesActifs(prestataires)
-  const mesAppsActives = countActiveDomainApps(apps)
-
-  const kpis = [
-    {
-      label: "Clients",
-      sub: "au total",
-      value: clientCount,
-      loading: eventsLoading,
-      icon: Users,
-      iconColor: "text-muted-foreground",
-      iconBg: "bg-muted",
-      href: "/evenements",
-      ariaLabel: `Clients : ${clientCount} — ouvrir le registre des événements`,
-    },
-    {
-      label: "Événements",
-      sub: "à venir ou en cours",
-      value: upcomingCount,
-      loading: eventsLoading,
-      icon: CalendarDays,
-      iconColor: "text-primary",
-      iconBg: "bg-primary/10",
-      href: "/evenements",
-      ariaLabel: `Événements à venir : ${upcomingCount} — ouvrir le registre`,
-    },
-    {
-      label: "Prestataires",
-      sub: "actifs",
-      value: prestatairesActifs,
-      loading: prestatairesLoading,
-      icon: Briefcase,
-      iconColor: "text-amber-600",
-      iconBg: "bg-amber-50",
-      href: "/prestataires",
-      ariaLabel: `Prestataires actifs : ${prestatairesActifs} — ouvrir la gestion`,
-    },
-    {
-      label: "Mes Apps",
-      sub: "actives",
-      value: mesAppsActives,
-      loading: appsLoading,
-      icon: Smartphone,
-      iconColor: "text-primary",
-      iconBg: "bg-primary/10",
-      href: "/mes-apps",
-      ariaLabel: `Applications actives : ${mesAppsActives} — ouvrir Mes applications`,
-    },
-  ] as const
+  const prestatairesDemo = countPrestatairesActifs()
+  const appsDemo = countActiveDomainApps(DOMAIN_APPS_SEED)
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon
-        return (
-          <Link
-            key={kpi.label}
-            href={kpi.href}
-            className={`${cardClass} cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
-            aria-label={kpi.ariaLabel}
-          >
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-md ${kpi.iconBg} transition-transform group-hover:scale-105`}
-            >
-              <Icon className={`h-5 w-5 ${kpi.iconColor}`} />
-            </div>
-            <div>
-              <KpiValue loading={kpi.loading} value={kpi.value} />
-              <p className="mt-1 text-xs text-muted-foreground">{kpi.sub}</p>
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {kpi.label}
-            </p>
-          </Link>
-        )
-      })}
+    <>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon
+          const cardClass =
+            "group flex flex-col gap-3 rounded-md border border-border bg-card px-5 py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
 
-      <Link
-        href="/catalogue-extras"
-        className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-primary/20 bg-primary px-5 py-5 text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label="Ouvrir le catalogue d'extras et la configuration"
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-foreground/15 text-primary-foreground transition-transform group-hover:scale-105">
-          <Package className="h-5 w-5" />
-        </div>
-        <p className="text-center text-sm font-semibold leading-snug text-balance text-primary-foreground">
-          Gérer mon catalogue d&apos;extras
-        </p>
-      </Link>
-    </div>
+          const displayValue = kpi.openMessaging
+            ? String(unreadTotal)
+            : kpi.label === "Clients"
+              ? DEMO_CLIENTS
+              : kpi.label === "Prestataires"
+                ? String(prestatairesDemo)
+                : kpi.label === "Mes Apps"
+                  ? String(appsDemo)
+                  : kpi.value
+          const showMsgBadge = kpi.openMessaging && unreadTotal > 0
+
+          const inner = (
+            <>
+              <div className="relative w-fit">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-md ${kpi.iconBg} ${kpi.iconColor} transition-transform group-hover:scale-105`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                {(kpi.badge && !kpi.openMessaging) || showMsgBadge ? (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-bold text-amber-800 ring-2 ring-card">
+                    {kpi.openMessaging ? unreadTotal : 5}
+                  </span>
+                ) : null}
+              </div>
+
+              <div>
+                <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
+                  {displayValue}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{kpi.sub}</p>
+              </div>
+
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {kpi.label}
+              </p>
+            </>
+          )
+
+          if (kpi.openMessaging) {
+            return (
+              <button
+                key={kpi.label}
+                type="button"
+                onClick={() => setMessagingOpen(true)}
+                className={`${cardClass} cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+                aria-label={`Ouvrir la messagerie — ${unreadTotal} message${unreadTotal > 1 ? "s" : ""} non lu${unreadTotal > 1 ? "s" : ""}`}
+              >
+                {inner}
+              </button>
+            )
+          }
+
+          if (kpi.href) {
+            return (
+              <Link
+                key={kpi.label}
+                href={kpi.href}
+                className={`${cardClass} cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+                aria-label={
+                  kpi.href === "/evenements"
+                    ? `${kpi.label} : ${displayValue} — ouvrir le registre des événements`
+                    : kpi.href === "/prestataires"
+                      ? `${kpi.label} : ${displayValue} — ouvrir la gestion des prestataires`
+                      : `${kpi.label} : ${displayValue} — ouvrir Mes applications`
+                }
+              >
+                {inner}
+              </Link>
+            )
+          }
+
+          return (
+            <div key={kpi.label} className={`${cardClass} cursor-default`}>
+              {inner}
+            </div>
+          )
+        })}
+
+        <Link
+          href="/catalogue-extras"
+          className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-primary/20 bg-primary px-5 py-5 text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label="Ouvrir le catalogue d'extras et la configuration"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-foreground/15 text-primary-foreground transition-transform group-hover:scale-105">
+            <Package className="h-5 w-5" />
+          </div>
+          <p className="text-center text-sm font-semibold leading-snug text-balance text-primary-foreground">
+            Gérer mon catalogue d&apos;extras
+          </p>
+        </Link>
+      </div>
+
+      <MessagingSheet open={messagingOpen} onOpenChange={setMessagingOpen} />
+    </>
   )
 }
