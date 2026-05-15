@@ -2,13 +2,18 @@
 
 import { useMemo } from "react"
 import { TrendingUp, Camera, Tent, UtensilsCrossed, Target } from "lucide-react"
-import { DOMAIN_EXTRAS_SEED, formatEur } from "@/lib/domain-extras"
+import { Skeleton } from "@/components/ui/skeleton"
+import { formatEur } from "@/lib/domain-extras"
+import { useCatalogueSync } from "@/hooks/use-catalogue-sync"
 
 const ICONS = [Camera, Tent, UtensilsCrossed] as const
 
 export function FinanceColumn() {
+  const { extras, loading } = useCatalogueSync()
+
   const { upsells, monthLabel, totalHt, goalHt, progress } = useMemo(() => {
-    const visible = DOMAIN_EXTRAS_SEED.filter((e) => e.visible)
+    const visible = extras
+      .filter((e) => e.visible)
       .sort((a, b) => b.priceEur - a.priceEur)
       .slice(0, 3)
 
@@ -41,7 +46,7 @@ export function FinanceColumn() {
       goalHt: goal,
       progress: pct,
     }
-  }, [])
+  }, [extras])
 
   const remaining = Math.max(0, goalHt - totalHt)
 
@@ -61,12 +66,20 @@ export function FinanceColumn() {
 
       <article className="flex flex-1 flex-col justify-between gap-6 px-6 py-6">
         <section>
-          <p className="flex items-end gap-3">
-            <span className="text-5xl font-bold tracking-tight text-primary">
-              + {formatEur(totalHt)}
-            </span>
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">générés ce mois en upsells (catalogue visible)</p>
+          {loading ? (
+            <Skeleton className="h-14 w-40" />
+          ) : (
+            <>
+              <p className="flex items-end gap-3">
+                <span className="text-5xl font-bold tracking-tight text-primary">
+                  + {formatEur(totalHt)}
+                </span>
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                générés ce mois en upsells (catalogue visible)
+              </p>
+            </>
+          )}
 
           <section className="mt-6">
             <p className="mb-2 flex items-center justify-between">
@@ -78,40 +91,56 @@ export function FinanceColumn() {
             </p>
             <span className="block h-2.5 w-full rounded-full bg-muted">
               <span
-                className="block h-2.5 rounded-full bg-primary transition-all duration-700"
+                className="block h-full rounded-full bg-primary transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </span>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              {formatEur(totalHt)} sur {formatEur(goalHt)} · Il reste {formatEur(remaining)} pour
-              atteindre l&apos;objectif
+              {loading ? (
+                <Skeleton className="inline-block h-4 w-48" />
+              ) : (
+                <>
+                  Encore <span className="font-medium text-foreground">{formatEur(remaining)}</span> pour
+                  atteindre l&apos;objectif ({formatEur(goalHt)} HT)
+                </>
+              )}
             </p>
           </section>
         </section>
 
         <section>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Détail des ventes
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Top extras visibles
           </p>
-          <ul className="flex flex-col gap-3">
-            {upsells.map((item) => {
-              const Icon = item.icon
-              return (
-                <li
-                  key={item.label}
-                  className="group flex list-none items-center gap-3 rounded-md border border-border px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
-                >
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${item.bg} ${item.color} ring-1 ${item.ring} transition-transform group-hover:scale-105`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-foreground">{item.label}</span>
-                  <span className="text-sm font-bold tracking-tight text-foreground">{item.amount}</span>
+          {loading ? (
+            <ul className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li key={i}>
+                  <Skeleton className="h-12 w-full" />
                 </li>
-              )
-            })}
-          </ul>
+              ))}
+            </ul>
+          ) : upsells.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun extra visible dans le catalogue.</p>
+          ) : (
+            <ul className="space-y-3">
+              {upsells.map((item) => {
+                const Icon = item.icon
+                return (
+                  <li
+                    key={item.label}
+                    className={`flex items-center justify-between rounded-md px-3 py-2.5 ring-1 ${item.bg} ${item.ring}`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon className={`h-4 w-4 ${item.color}`} />
+                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    </span>
+                    <span className={`text-sm font-bold tabular-nums ${item.color}`}>{item.amount}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </section>
       </article>
     </section>

@@ -1,5 +1,12 @@
 export type ExtraCategory = "Séjour & confort" | "Réception" | "Animation" | "Logistique"
 
+export const EXTRA_CATEGORIES: ExtraCategory[] = [
+  "Séjour & confort",
+  "Réception",
+  "Animation",
+  "Logistique",
+]
+
 export type DomainExtra = {
   id: string
   label: string

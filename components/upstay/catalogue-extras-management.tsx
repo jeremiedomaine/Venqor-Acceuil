@@ -2,11 +2,22 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Package } from "lucide-react"
+import { ArrowLeft, Loader2, MoreHorizontal, Package, Pencil, Plus, Trash2 } from "lucide-react"
+import { updateCatalogueConfigAction, updateCatalogueExtraVisibleAction } from "@/app/actions/catalogue"
+import { ExtraDeleteDialog } from "@/components/upstay/extra-delete-dialog"
+import { ExtraFormDialog } from "@/components/upstay/extra-form-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,16 +30,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  DEFAULT_CATALOGUE_CONFIG,
-  DOMAIN_EXTRAS_SEED,
   formatEur,
   priceWithVat,
-  type CatalogueConfig,
   type DomainExtra,
   type ExtraCategory,
 } from "@/lib/domain-extras"
+import { useCatalogueSync, DOMAIN_CATALOGUE_CHANGED } from "@/hooks/use-catalogue-sync"
 import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 function categoryBadgeClass(c: ExtraCategory) {
   const map: Record<ExtraCategory, string> = {
@@ -42,19 +52,58 @@ function categoryBadgeClass(c: ExtraCategory) {
 
 export function CatalogueExtrasManagement() {
   const domain = useDomain()
-  const [extras, setExtras] = useState<DomainExtra[]>(() => [...DOMAIN_EXTRAS_SEED])
-  const [config, setConfig] = useState<CatalogueConfig>(() => ({ ...DEFAULT_CATALOGUE_CONFIG }))
-  const [savedHint, setSavedHint] = useState<string | null>(null)
+  const { extras, config, setConfig, loading, error } = useCatalogueSync()
+  const [savingConfig, setSavingConfig] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [formMode, setFormMode] = useState<"create" | "edit">("create")
+  const [editingExtra, setEditingExtra] = useState<DomainExtra | null>(null)
+  const [deleteExtra, setDeleteExtra] = useState<DomainExtra | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   const visibleCount = useMemo(() => extras.filter((e) => e.visible).length, [extras])
 
-  function setVisible(id: string, visible: boolean) {
-    setExtras((prev) => prev.map((e) => (e.id === id ? { ...e, visible } : e)))
+  function openCreate() {
+    setFormMode("create")
+    setEditingExtra(null)
+    setFormOpen(true)
   }
 
-  function saveConfig() {
-    setSavedHint("Configuration enregistrée (démo — pas d’API).")
-    window.setTimeout(() => setSavedHint(null), 4000)
+  function openEdit(extra: DomainExtra) {
+    setFormMode("edit")
+    setEditingExtra(extra)
+    setFormOpen(true)
+  }
+
+  function openDelete(extra: DomainExtra) {
+    setDeleteExtra(extra)
+    setDeleteOpen(true)
+  }
+
+  async function setVisible(id: string, visible: boolean) {
+    setTogglingId(id)
+    try {
+      await updateCatalogueExtraVisibleAction(id, visible)
+      window.dispatchEvent(new Event(DOMAIN_CATALOGUE_CHANGED))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur de visibilité.")
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  async function saveConfig() {
+    setSavingConfig(true)
+    try {
+      const saved = await updateCatalogueConfigAction(config)
+      setConfig(saved)
+      window.dispatchEvent(new Event(DOMAIN_CATALOGUE_CHANGED))
+      toast.success("Configuration enregistrée.")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur d'enregistrement.")
+    } finally {
+      setSavingConfig(false)
+    }
   }
 
   return (
@@ -71,18 +120,36 @@ export function CatalogueExtrasManagement() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
-          <Link href="/" className="gap-2">
-            <ArrowLeft className="size-4" />
-            Tableau de bord
-          </Link>
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="w-fit" asChild>
+            <Link href="/" className="gap-2">
+              <ArrowLeft className="size-4" />
+              Tableau de bord
+            </Link>
+          </Button>
+          <Button size="sm" className="gap-2" onClick={openCreate}>
+            <Plus className="size-4" />
+            Ajouter un extra
+          </Button>
+        </div>
       </div>
 
+      {error ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
       <div className="rounded-md border border-border bg-card px-4 py-3 text-sm shadow-sm">
-        <span className="text-muted-foreground">{extras.length} extras au catalogue · </span>
-        <span className="font-medium text-foreground">{visibleCount}</span>
-        <span className="text-muted-foreground"> visibles pour les clients</span>
+        {loading ? (
+          <Skeleton className="h-5 w-64" />
+        ) : (
+          <>
+            <span className="text-muted-foreground">{extras.length} extras au catalogue · </span>
+            <span className="font-medium text-foreground">{visibleCount}</span>
+            <span className="text-muted-foreground"> visibles pour les clients</span>
+          </>
+        )}
       </div>
 
       <Tabs defaultValue="catalogue" className="w-full gap-4">
@@ -101,42 +168,86 @@ export function CatalogueExtrasManagement() {
                 <TableHead className="text-right">Prix TTC</TableHead>
                 <TableHead className="text-center">TVA</TableHead>
                 <TableHead className="text-center">Visible</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {extras.map((row) => {
-                const ttc = priceWithVat(row.priceEur, row.vatPercent)
-                return (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <p className="font-medium text-foreground">{row.label}</p>
-                      <p className="mt-0.5 max-w-md text-xs text-muted-foreground">{row.description}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={cn("font-normal", categoryBadgeClass(row.category))}>
-                        {row.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums font-medium">{formatEur(row.priceEur)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {formatEur(ttc)}
-                    </TableCell>
-                    <TableCell className="text-center tabular-nums text-muted-foreground">{row.vatPercent} %</TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={row.visible}
-                        onCheckedChange={(v) => setVisible(row.id, v)}
-                        aria-label={`Afficher ${row.label}`}
-                      />
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={7}>
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
-                )
-              })}
+                ))
+              ) : extras.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    Aucun extra. Ajoutez votre premier article au catalogue.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                extras.map((row) => {
+                  const ttc = priceWithVat(row.priceEur, row.vatPercent)
+                  return (
+                    <TableRow key={row.id}>
+                      <TableCell>
+                        <p className="font-medium text-foreground">{row.label}</p>
+                        <p className="mt-0.5 max-w-md text-xs text-muted-foreground">{row.description}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("font-normal", categoryBadgeClass(row.category))}>
+                          {row.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">{formatEur(row.priceEur)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {formatEur(ttc)}
+                      </TableCell>
+                      <TableCell className="text-center tabular-nums text-muted-foreground">
+                        {row.vatPercent} %
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {togglingId === row.id ? (
+                          <Loader2 className="mx-auto size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Switch
+                            checked={row.visible}
+                            onCheckedChange={(v) => void setVisible(row.id, v)}
+                            aria-label={`Afficher ${row.label}`}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreHorizontal className="size-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEdit(row)}>
+                              <Pencil className="size-4" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => openDelete(row)}
+                            >
+                              <Trash2 className="size-4" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
             </TableBody>
           </Table>
-          <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-            Les changements de visibilité restent en session (démo). Branchement base de données à prévoir.
-          </p>
         </TabsContent>
 
         <TabsContent value="config" className="space-y-6">
@@ -157,6 +268,7 @@ export function CatalogueExtrasManagement() {
                 id="ttc-default"
                 checked={config.showTtcByDefault}
                 onCheckedChange={(v) => setConfig((c) => ({ ...c, showTtcByDefault: v }))}
+                disabled={loading}
               />
             </div>
 
@@ -171,6 +283,7 @@ export function CatalogueExtrasManagement() {
                 id="guest-book"
                 checked={config.guestBookingAllowed}
                 onCheckedChange={(v) => setConfig((c) => ({ ...c, guestBookingAllowed: v }))}
+                disabled={loading}
               />
             </div>
 
@@ -181,6 +294,7 @@ export function CatalogueExtrasManagement() {
                 rows={4}
                 value={config.introClient}
                 onChange={(e) => setConfig((c) => ({ ...c, introClient: e.target.value }))}
+                disabled={loading}
               />
             </div>
 
@@ -196,6 +310,7 @@ export function CatalogueExtrasManagement() {
                   onChange={(e) =>
                     setConfig((c) => ({ ...c, minLeadDays: Math.max(0, Number(e.target.value) || 0) }))
                   }
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -213,19 +328,28 @@ export function CatalogueExtrasManagement() {
                       platformFeePercent: Math.min(30, Math.max(0, Number(e.target.value) || 0)),
                     }))
                   }
+                  disabled={loading}
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button type="button" onClick={saveConfig}>
-                Enregistrer la configuration
+            <div className="mt-6">
+              <Button type="button" onClick={() => void saveConfig()} disabled={savingConfig || loading} className="gap-2">
+                {savingConfig ? <Loader2 className="size-4 animate-spin" /> : null}
+                {savingConfig ? "Enregistrement…" : "Enregistrer la configuration"}
               </Button>
-              {savedHint ? <span className="text-sm text-primary">{savedHint}</span> : null}
             </div>
           </div>
         </TabsContent>
       </Tabs>
+
+      <ExtraFormDialog
+        mode={formMode}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        extra={editingExtra}
+      />
+      <ExtraDeleteDialog extra={deleteExtra} open={deleteOpen} onOpenChange={setDeleteOpen} />
     </div>
   )
 }

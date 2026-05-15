@@ -6,7 +6,7 @@ export type DomainApp = {
   label: string
   /** Partie hôte du sous-domaine (sans protocole), ex. upsells */
   slug: string
-  /** URL complète affichée (démo) */
+  /** URL complète affichée */
   host: string
   status: DomainAppStatus
   /** ISO yyyy-mm-dd */
@@ -14,7 +14,7 @@ export type DomainApp = {
   description: string | null
 }
 
-/** Applications / sous-domaines créés pour le domaine (démo) */
+/** Données de démo pour le script de seed (`npm run db:seed`) */
 export const DOMAIN_APPS_SEED: DomainApp[] = [
   {
     id: "app-1",
@@ -45,44 +45,6 @@ export const DOMAIN_APPS_SEED: DomainApp[] = [
   },
 ]
 
-export function countActiveDomainApps(apps: DomainApp[] = DOMAIN_APPS_SEED): number {
+export function countActiveDomainApps(apps: DomainApp[] = []): number {
   return apps.filter((a) => a.status === "Actif").length
-}
-
-export function slugifyHostPart(input: string): string {
-  return input
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48)
-}
-
-const STORAGE_KEY = "venqor-domain-apps-extras"
-
-export function loadExtraDomainApps(): DomainApp[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as DomainApp[]) : []
-  } catch {
-    return []
-  }
-}
-
-export function loadAllDomainApps(): DomainApp[] {
-  return [...loadExtraDomainApps(), ...DOMAIN_APPS_SEED]
-}
-
-export function persistExtraDomainApp(app: DomainApp): void {
-  if (typeof window === "undefined") return
-  try {
-    const next = [app, ...loadExtraDomainApps().filter((a) => a.id !== app.id)]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    window.dispatchEvent(new Event("venqor-apps-changed"))
-  } catch {
-    /* ignore */
-  }
 }

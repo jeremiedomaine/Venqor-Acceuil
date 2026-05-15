@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Users, MessageSquare, Briefcase, Smartphone, Package } from "lucide-react"
 import { MessagingSheet } from "@/components/upstay/messaging-sheet"
 import { totalUnreadMessages } from "@/lib/messaging-clients"
 import { countPrestatairesActifs } from "@/lib/prestataires"
-import { countActiveDomainApps, loadAllDomainApps } from "@/lib/domain-apps"
+import { countActiveDomainApps } from "@/lib/domain-apps"
 import { countUniqueClients } from "@/lib/domain-events-store"
 import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
+import { usePrestatairesSync } from "@/hooks/use-prestataires-sync"
+import { useDomainAppsSync } from "@/hooks/use-domain-apps-sync"
 
 const kpis: {
   label: string
@@ -66,20 +68,12 @@ const kpis: {
 export function KpiBar() {
   const [messagingOpen, setMessagingOpen] = useState(false)
   const unreadTotal = totalUnreadMessages()
-  const [mesAppsActives, setMesAppsActives] = useState(() => countActiveDomainApps())
   const { events } = useDomainEventsSync()
+  const { prestataires } = usePrestatairesSync()
+  const { apps } = useDomainAppsSync()
   const clientCount = countUniqueClients(events)
-
-  useEffect(() => {
-    const syncApps = () => setMesAppsActives(countActiveDomainApps(loadAllDomainApps()))
-    syncApps()
-    window.addEventListener("focus", syncApps)
-    window.addEventListener("venqor-apps-changed", syncApps)
-    return () => {
-      window.removeEventListener("focus", syncApps)
-      window.removeEventListener("venqor-apps-changed", syncApps)
-    }
-  }, [])
+  const prestatairesActifs = countPrestatairesActifs(prestataires)
+  const mesAppsActives = countActiveDomainApps(apps)
 
   return (
     <>
@@ -94,7 +88,7 @@ export function KpiBar() {
             : kpi.label === "Clients"
               ? String(clientCount)
               : kpi.label === "Prestataires"
-                ? String(countPrestatairesActifs())
+                ? String(prestatairesActifs)
                 : kpi.label === "Mes Apps"
                   ? String(mesAppsActives)
                   : kpi.value

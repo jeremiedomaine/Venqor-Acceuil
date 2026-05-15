@@ -2,9 +2,28 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  ChevronsUpDown,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react"
+import { PrestataireDeleteDialog } from "@/components/upstay/prestataire-delete-dialog"
+import { PrestataireFormDialog } from "@/components/upstay/prestataire-form-dialog"
+import { PrestataireStatusSelect } from "@/components/upstay/prestataire-status-select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -14,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -22,12 +42,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { PRESTATAIRE_CATEGORIES } from "@/lib/data/prestataires"
 import {
-  DOMAIN_PRESTATAIRES,
+  countPrestatairesActifs,
   type PrestataireCategory,
   type PrestataireRecord,
   type PrestataireStatus,
 } from "@/lib/prestataires"
+import { usePrestatairesSync } from "@/hooks/use-prestataires-sync"
 import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
 
@@ -38,12 +60,6 @@ type SortKey = keyof Pick<
   PrestataireRecord,
   "name" | "category" | "contactName" | "email" | "eventsLinked" | "status"
 >
-
-function statusBadgeClass(s: PrestataireStatus) {
-  if (s === "Actif") return "border-emerald-200 bg-emerald-50 text-emerald-800"
-  if (s === "Suspendu") return "border-red-200 bg-red-50 text-red-800"
-  return "border-amber-200 bg-amber-50 text-amber-900"
-}
 
 function categoryBadgeClass(c: PrestataireCategory) {
   const map: Partial<Record<PrestataireCategory, string>> = {
@@ -76,37 +92,26 @@ function SortIndicator({
   )
 }
 
-const CATEGORIES: PrestataireCategory[] = [
-  "Traiteur",
-  "Photographie",
-  "Musique / DJ",
-  "Fleuriste",
-  "Location matériel",
-  "Chapiteau",
-  "Sécurité",
-  "Transport",
-  "Coordination",
-  "Autre",
-]
-
 export function PrestatairesManagement() {
   const domain = useDomain()
+  const { prestataires, loading, error } = usePrestatairesSync()
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+  const [formOpen, setFormOpen] = useState(false)
+  const [formMode, setFormMode] = useState<"create" | "edit">("create")
+  const [editing, setEditing] = useState<PrestataireRecord | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PrestataireRecord | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
-    let list = [...DOMAIN_PRESTATAIRES]
+    let list = [...prestataires]
 
-    if (statusFilter !== "all") {
-      list = list.filter((p) => p.status === statusFilter)
-    }
-    if (categoryFilter !== "all") {
-      list = list.filter((p) => p.category === categoryFilter)
-    }
+    if (statusFilter !== "all") list = list.filter((p) => p.status === statusFilter)
+    if (categoryFilter !== "all") list = list.filter((p) => p.category === categoryFilter)
     if (q) {
       list = list.filter(
         (p) =>
@@ -121,14 +126,12 @@ export function PrestatairesManagement() {
     list.sort((a, b) => {
       let va: string | number = ""
       let vb: string | number = ""
-      switch (sortKey) {
-        case "eventsLinked":
-          va = a.eventsLinked
-          vb = b.eventsLinked
-          break
-        default:
-          va = String(a[sortKey]).toLowerCase()
-          vb = String(b[sortKey]).toLowerCase()
+      if (sortKey === "eventsLinked") {
+        va = a.eventsLinked
+        vb = b.eventsLinked
+      } else {
+        va = String(a[sortKey]).toLowerCase()
+        vb = String(b[sortKey]).toLowerCase()
       }
       if (va < vb) return -1 * mul
       if (va > vb) return 1 * mul
@@ -136,12 +139,9 @@ export function PrestatairesManagement() {
     })
 
     return list
-  }, [query, statusFilter, categoryFilter, sortKey, sortDir])
+  }, [prestataires, query, statusFilter, categoryFilter, sortKey, sortDir])
 
-  const actifs = useMemo(
-    () => DOMAIN_PRESTATAIRES.filter((p) => p.status === "Actif").length,
-    [],
-  )
+  const actifs = useMemo(() => countPrestatairesActifs(prestataires), [prestataires])
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -161,26 +161,54 @@ export function PrestatairesManagement() {
             Annuaire, statuts et suivi des partenaires — {domain.name}.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
-          <Link href="/" className="gap-2">
-            <ArrowLeft className="size-4" />
-            Tableau de bord
-          </Link>
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="w-fit" asChild>
+            <Link href="/" className="gap-2">
+              <ArrowLeft className="size-4" />
+              Tableau de bord
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              setFormMode("create")
+              setEditing(null)
+              setFormOpen(true)
+            }}
+          >
+            <Plus className="size-4" />
+            Ajouter
+          </Button>
+        </div>
       </div>
+
+      {error ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-md border border-border bg-card px-4 py-3 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Actifs</p>
-          <p className="text-2xl font-bold tabular-nums text-foreground">{actifs}</p>
+          {loading ? (
+            <Skeleton className="mt-2 h-8 w-12" />
+          ) : (
+            <p className="text-2xl font-bold tabular-nums text-foreground">{actifs}</p>
+          )}
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Référencés</p>
-          <p className="text-2xl font-bold tabular-nums text-foreground">{DOMAIN_PRESTATAIRES.length}</p>
+          {loading ? (
+            <Skeleton className="mt-2 h-8 w-12" />
+          ) : (
+            <p className="text-2xl font-bold tabular-nums text-foreground">{prestataires.length}</p>
+          )}
         </div>
         <div className="rounded-md border border-border bg-card px-4 py-3 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Catégories</p>
-          <p className="text-2xl font-bold tabular-nums text-foreground">{CATEGORIES.length}</p>
+          <p className="text-2xl font-bold tabular-nums text-foreground">{PRESTATAIRE_CATEGORIES.length}</p>
         </div>
       </div>
 
@@ -217,7 +245,7 @@ export function PrestatairesManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les catégories</SelectItem>
-                {CATEGORIES.map((c) => (
+                {PRESTATAIRE_CATEGORIES.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>
@@ -252,53 +280,26 @@ export function PrestatairesManagement() {
                   <SortIndicator active={sortKey === "category"} dir={sortDir} />
                 </button>
               </TableHead>
-              <TableHead>
-                <button
-                  type="button"
-                  className="inline-flex items-center font-semibold hover:text-primary"
-                  onClick={() => toggleSort("contactName")}
-                >
-                  Contact
-                  <SortIndicator active={sortKey === "contactName"} dir={sortDir} />
-                </button>
-              </TableHead>
-              <TableHead>
-                <button
-                  type="button"
-                  className="inline-flex items-center font-semibold hover:text-primary"
-                  onClick={() => toggleSort("email")}
-                >
-                  E-mail
-                  <SortIndicator active={sortKey === "email"} dir={sortDir} />
-                </button>
-              </TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>E-mail</TableHead>
               <TableHead className="whitespace-nowrap">Téléphone</TableHead>
-              <TableHead className="text-right">
-                <button
-                  type="button"
-                  className="inline-flex w-full items-center justify-end font-semibold hover:text-primary"
-                  onClick={() => toggleSort("eventsLinked")}
-                >
-                  Événements
-                  <SortIndicator active={sortKey === "eventsLinked"} dir={sortDir} />
-                </button>
-              </TableHead>
-              <TableHead>
-                <button
-                  type="button"
-                  className="inline-flex items-center font-semibold hover:text-primary"
-                  onClick={() => toggleSort("status")}
-                >
-                  Statut
-                  <SortIndicator active={sortKey === "status"} dir={sortDir} />
-                </button>
-              </TableHead>
+              <TableHead className="text-right">Événements</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell colSpan={8}>
+                    <Skeleton className="h-10 w-full" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   Aucun prestataire ne correspond aux critères.
                 </TableCell>
               </TableRow>
@@ -318,34 +319,76 @@ export function PrestatairesManagement() {
                   <TableCell className="whitespace-nowrap text-muted-foreground">{p.phone}</TableCell>
                   <TableCell className="text-right tabular-nums">{p.eventsLinked}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={cn("font-normal", statusBadgeClass(p.status))}>
-                      {p.status}
-                    </Badge>
+                    <PrestataireStatusSelect prestataire={p} />
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreHorizontal className="size-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setFormMode("edit")
+                            setEditing(p)
+                            setFormOpen(true)
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => {
+                            setDeleteTarget(p)
+                            setDeleteOpen(true)
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
-        <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">Dernière / prochaine mission (aperçu)</p>
-          {rows.length > 0 ? (
+        {!loading && rows.length > 0 ? (
+          <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">Dernière / prochaine mission (aperçu)</p>
             <ul className="mt-2 space-y-1">
               {rows.slice(0, 5).map((p) => (
                 <li key={`m-${p.id}`}>
                   <span className="text-foreground">{p.name}</span>
                   {" — "}
-                  <span>{p.lastOrNextMission}</span>
+                  <span>{p.lastOrNextMission || "—"}</span>
                 </li>
               ))}
-              {rows.length > 5 ? <li className="pt-1 italic">… et {rows.length - 5} autre(s) dans le tableau</li> : null}
             </ul>
-          ) : null}
-          <p className="mt-3 border-t border-border pt-2">
-            {rows.length} ligne{rows.length > 1 ? "s" : ""} — données de démonstration (contrats & facturation à brancher).
-          </p>
-        </div>
+            <p className="mt-3 border-t border-border pt-2">
+              {rows.length} ligne{rows.length > 1 ? "s" : ""} affichée{rows.length > 1 ? "s" : ""}.
+            </p>
+          </div>
+        ) : null}
       </div>
+
+      <PrestataireFormDialog
+        mode={formMode}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        prestataire={editing}
+      />
+      <PrestataireDeleteDialog
+        prestataire={deleteTarget}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
     </div>
   )
 }
