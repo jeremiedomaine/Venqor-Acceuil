@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowUp,
   ChevronsUpDown,
+  CalendarRange,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -15,6 +16,8 @@ import {
 import { EventDeleteDialog } from "@/components/upstay/event-delete-dialog"
 import { EventFormDialog } from "@/components/upstay/event-form-dialog"
 import { EventStatusSelect } from "@/components/upstay/event-status-select"
+import { DashboardSurface } from "@/components/upstay/dashboard-surface"
+import { EmptyState } from "@/components/upstay/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -211,39 +214,51 @@ export function DomainEventsRegistry() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-8 sm:space-y-10">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Activité
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             Registre des événements
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {domain.name} — passés, en cours et à venir.
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {domain.name} — historique, en cours et dates à venir, en un seul endroit.
           </p>
           {!loading && (
-            <p className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5">
+            <p className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
                 {stats.total} au total
               </span>
               {stats.ongoing > 0 && (
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-emerald-800">
+                <span className="rounded-full border border-emerald-200/70 bg-emerald-50/90 px-3 py-1 text-xs font-medium text-emerald-900">
                   {stats.ongoing} en cours
                 </span>
               )}
-              <span className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-primary">
+              <span className="rounded-full border border-primary/20 bg-primary/6 px-3 py-1 text-xs font-medium text-primary">
                 {stats.upcoming} à venir
               </span>
             </p>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" className="shrink-0 gap-2" asChild>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 shrink-0 gap-2 rounded-lg border-border/80 transition-premium"
+            asChild
+          >
             <Link href="/">
               <ArrowLeft className="size-4" />
               Tableau de bord
             </Link>
           </Button>
-          <Button size="sm" className="gap-2" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            className="h-10 gap-2 rounded-lg px-4 shadow-sm shadow-primary/10 transition-premium"
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus className="size-4" />
             Nouvel événement
           </Button>
@@ -253,27 +268,30 @@ export function DomainEventsRegistry() {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          className="rounded-xl border border-destructive/25 bg-destructive/5 px-5 py-4 text-sm leading-relaxed text-destructive"
         >
           {error}
         </div>
       )}
 
-      <div className="rounded-md border border-border bg-card p-4 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <DashboardSurface className="p-5 sm:p-6">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2 lg:col-span-2">
-            <Label htmlFor="ev-search">Recherche</Label>
+            <Label htmlFor="ev-search" className="text-muted-foreground">
+              Recherche
+            </Label>
             <Input
               id="ev-search"
               placeholder="Événement, client, notes…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              className="h-11 rounded-lg border-border/80 bg-background/80 transition-premium"
             />
           </div>
           <div className="space-y-2">
-            <Label>Période</Label>
+            <Label className="text-muted-foreground">Période</Label>
             <Select value={temporal} onValueChange={(v) => setTemporal(v as TemporalFilter)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-11 w-full rounded-lg border-border/80">
                 <SelectValue placeholder="Période" />
               </SelectTrigger>
               <SelectContent>
@@ -285,9 +303,9 @@ export function DomainEventsRegistry() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label className="text-muted-foreground">Type</Label>
             <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-11 w-full rounded-lg border-border/80">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -299,17 +317,17 @@ export function DomainEventsRegistry() {
             </Select>
           </div>
         </div>
-      </div>
+      </DashboardSurface>
 
-      <div className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
+      <DashboardSurface className="overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
+              <TableRow className="border-border/60 hover:bg-transparent">
                 <TableHead className="min-w-[200px]">
                   <button
                     type="button"
-                    className="inline-flex items-center font-semibold hover:text-primary"
+                    className="inline-flex items-center rounded-md px-1 py-0.5 text-sm font-semibold text-foreground/80 transition-premium hover:bg-muted/70 hover:text-primary"
                     onClick={() => toggleSort("title")}
                   >
                     Événement
@@ -319,7 +337,7 @@ export function DomainEventsRegistry() {
                 <TableHead>
                   <button
                     type="button"
-                    className="inline-flex items-center font-semibold hover:text-primary"
+                    className="inline-flex items-center rounded-md px-1 py-0.5 text-sm font-semibold text-foreground/80 transition-premium hover:bg-muted/70 hover:text-primary"
                     onClick={() => toggleSort("type")}
                   >
                     Type
@@ -329,7 +347,7 @@ export function DomainEventsRegistry() {
                 <TableHead>
                   <button
                     type="button"
-                    className="inline-flex items-center font-semibold hover:text-primary"
+                    className="inline-flex items-center rounded-md px-1 py-0.5 text-sm font-semibold text-foreground/80 transition-premium hover:bg-muted/70 hover:text-primary"
                     onClick={() => toggleSort("dateStart")}
                   >
                       Dates
@@ -337,12 +355,14 @@ export function DomainEventsRegistry() {
                   </button>
                 </TableHead>
                 <TableHead>
-                  <span className="font-semibold">Temporalité</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Temporalité
+                  </span>
                 </TableHead>
                 <TableHead>
                   <button
                     type="button"
-                    className="inline-flex items-center font-semibold hover:text-primary"
+                    className="inline-flex items-center rounded-md px-1 py-0.5 text-sm font-semibold text-foreground/80 transition-premium hover:bg-muted/70 hover:text-primary"
                     onClick={() => toggleSort("clientOrOrg")}
                   >
                     Client / org.
@@ -352,7 +372,7 @@ export function DomainEventsRegistry() {
                 <TableHead className="text-right">
                   <button
                     type="button"
-                    className="inline-flex w-full items-center justify-end font-semibold hover:text-primary"
+                    className="inline-flex w-full items-center justify-end rounded-md px-1 py-0.5 text-sm font-semibold text-foreground/80 transition-premium hover:bg-muted/70 hover:text-primary"
                     onClick={() => toggleSort("guestCount")}
                   >
                     Invités
@@ -360,7 +380,9 @@ export function DomainEventsRegistry() {
                   </button>
                 </TableHead>
                 <TableHead>
-                  <span className="font-semibold">Statut</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Statut
+                  </span>
                 </TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Actions</span>
@@ -371,31 +393,51 @@ export function DomainEventsRegistry() {
               {loading ? (
                 <RegistrySkeleton />
               ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center">
-                    <p className="text-muted-foreground">
-                      {allEvents.length === 0
-                        ? "Aucun événement pour le moment."
-                        : "Aucun événement ne correspond aux critères."}
-                    </p>
-                    {allEvents.length === 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3"
-                        onClick={() => setCreateOpen(true)}
-                      >
-                        <Plus className="mr-1.5 size-4" />
-                        Créer le premier événement
-                      </Button>
-                    )}
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableCell colSpan={8} className="p-0">
+                    <EmptyState
+                      icon={CalendarRange}
+                      title={
+                        allEvents.length === 0
+                          ? "Votre registre est encore vide"
+                          : "Aucun résultat avec ces filtres"
+                      }
+                      description={
+                        allEvents.length === 0
+                          ? "Enregistrez un premier événement — mariage, séminaire ou réception — pour centraliser vos dates, statuts et informations client."
+                          : "Élargissez la période, changez le type ou effacez la recherche pour retrouver vos événements."
+                      }
+                      className="py-12 sm:py-14"
+                    >
+                      {allEvents.length === 0 ? (
+                        <Button
+                          className="rounded-lg shadow-sm shadow-primary/10 transition-premium"
+                          onClick={() => setCreateOpen(true)}
+                        >
+                          <Plus className="mr-2 size-4" />
+                          Créer le premier événement
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="rounded-lg border-border/80 transition-premium"
+                          onClick={() => {
+                            setQuery("")
+                            setTemporal("all")
+                            setTypeFilter("all")
+                          }}
+                        >
+                          Réinitialiser les filtres
+                        </Button>
+                      )}
+                    </EmptyState>
                   </TableCell>
                 </TableRow>
               ) : (
                 rows.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="group cursor-pointer"
+                    className="cursor-pointer border-border/50 transition-colors duration-150 hover:bg-muted/45"
                     onClick={() => setEditEvent(r)}
                   >
                     <TableCell className="max-w-[240px] whitespace-normal">
@@ -425,7 +467,7 @@ export function DomainEventsRegistry() {
                     <TableCell className="max-w-[180px] whitespace-normal text-muted-foreground">
                       {r.clientOrOrg}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{r.guestCount}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium text-foreground">{r.guestCount}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <EventStatusSelect event={r} />
                     </TableCell>
@@ -435,7 +477,7 @@ export function DomainEventsRegistry() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 opacity-60 group-hover:opacity-100"
+                            className="size-9 rounded-lg text-muted-foreground opacity-70 transition-premium hover:bg-muted/80 hover:opacity-100"
                             aria-label={`Actions pour ${r.title}`}
                           >
                             <MoreHorizontal className="size-4" />
@@ -463,14 +505,19 @@ export function DomainEventsRegistry() {
             </TableBody>
           </Table>
         </div>
-        <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-          {loading
-            ? "Chargement…"
-            : `${rows.length} ligne${rows.length > 1 ? "s" : ""} affichée${rows.length > 1 ? "s" : ""}`}
-          {" · "}
-          Cliquez sur une ligne pour modifier · statut modifiable en direct
+        <p className="border-t border-border/60 bg-muted/20 px-5 py-3.5 text-xs leading-relaxed text-muted-foreground">
+          {loading ? (
+            "Chargement…"
+          ) : (
+            <>
+              <span className="font-medium text-foreground">{rows.length}</span> ligne
+              {rows.length > 1 ? "s" : ""} affichée{rows.length > 1 ? "s" : ""}
+              <span className="mx-1.5 text-border">·</span>
+              Cliquez sur une ligne pour modifier · le statut se met à jour en direct
+            </>
+          )}
         </p>
-      </div>
+      </DashboardSurface>
 
       <EventFormDialog mode="create" open={createOpen} onOpenChange={setCreateOpen} />
 

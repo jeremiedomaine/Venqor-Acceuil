@@ -115,22 +115,23 @@ export function EventFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-h-[90vh] gap-2 overflow-y-auto border-border/70 bg-card p-6 shadow-sm shadow-slate-900/8 sm:max-w-[28rem] sm:rounded-2xl sm:p-8">
+        <DialogHeader className="space-y-2 text-left">
+          <DialogTitle className="text-xl font-semibold tracking-tight text-foreground">
             {mode === "edit" ? "Modifier l'événement" : "Nouvel événement"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             {mode === "edit"
               ? "Les modifications sont enregistrées immédiatement sur le registre et le tableau de bord."
               : "L'événement apparaîtra sur le tableau de bord et dans le registre."}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-5 pt-4">
           <div className="grid gap-2">
-            <Label htmlFor="ev-form-title">Nom de l&apos;événement</Label>
+            <Label htmlFor="ev-form-title" className="text-muted-foreground">Nom de l&apos;événement</Label>
             <Input
+              className="h-11 rounded-lg border-border/80 transition-premium"
               id="ev-form-title"
               value={form.title}
               onChange={(e) => set("title")(e.target.value)}
@@ -142,9 +143,9 @@ export function EventFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label>Type</Label>
+              <Label className="text-muted-foreground">Type</Label>
               <Select value={form.eventType} onValueChange={set("eventType")}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-11 w-full rounded-lg border-border/80">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,12 +158,12 @@ export function EventFormDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Statut réservation</Label>
+              <Label className="text-muted-foreground">Statut réservation</Label>
               <Select
                 value={form.bookingStatus}
                 onValueChange={(v) => set("bookingStatus")(v as EventFormInput["bookingStatus"])}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-11 w-full rounded-lg border-border/80">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,8 +179,11 @@ export function EventFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="ev-form-start">Date de début</Label>
+              <Label htmlFor="ev-form-start" className="text-muted-foreground">
+                Date de début
+              </Label>
               <Input
+                className="h-11 rounded-lg border-border/80"
                 id="ev-form-start"
                 type="date"
                 value={form.dateStart}
@@ -188,8 +192,11 @@ export function EventFormDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-form-end">Date de fin</Label>
+              <Label htmlFor="ev-form-end" className="text-muted-foreground">
+                Date de fin
+              </Label>
               <Input
+                className="h-11 rounded-lg border-border/80"
                 id="ev-form-end"
                 type="date"
                 value={form.dateEnd}
@@ -201,8 +208,11 @@ export function EventFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2 sm:col-span-2">
-              <Label htmlFor="ev-form-client">Client / organisation</Label>
+              <Label htmlFor="ev-form-client" className="text-muted-foreground">
+                Client / organisation
+              </Label>
               <Input
+                className="h-11 rounded-lg border-border/80"
                 id="ev-form-client"
                 value={form.clientOrOrg}
                 onChange={(e) => set("clientOrOrg")(e.target.value)}
@@ -211,8 +221,11 @@ export function EventFormDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-form-guests">Nombre d&apos;invités</Label>
+              <Label htmlFor="ev-form-guests" className="text-muted-foreground">
+                Nombre d&apos;invités
+              </Label>
               <Input
+                className="h-11 rounded-lg border-border/80 tabular-nums"
                 id="ev-form-guests"
                 type="number"
                 min={1}
@@ -224,27 +237,34 @@ export function EventFormDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="ev-form-notes">Notes internes</Label>
+            <Label htmlFor="ev-form-notes" className="text-muted-foreground">
+              Notes internes
+            </Label>
             <Textarea
+              className="resize-none rounded-xl border-border/80 transition-premium"
               id="ev-form-notes"
               value={form.notes ?? ""}
               onChange={(e) => set("notes")(e.target.value)}
               placeholder="Allergies, contraintes horaires, contact sur place…"
               rows={3}
-              className="resize-none"
             />
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col-reverse gap-2 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
+              className="rounded-lg border-border/80 transition-premium"
               onClick={() => onOpenChange(false)}
               disabled={submitting}
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={submitting} className="gap-2">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="gap-2 rounded-lg shadow-sm shadow-primary/10 transition-premium"
+            >
               {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
               {submitting
                 ? "Enregistrement…"

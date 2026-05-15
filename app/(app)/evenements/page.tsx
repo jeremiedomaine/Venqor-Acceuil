@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function EvenementsPage() {
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-screen-xl px-6 py-8">
+      <main className="mx-auto max-w-screen-xl px-5 pb-20 pt-10 sm:px-8 sm:pt-12">
         <DomainEventsRegistry />
       </main>
     </div>

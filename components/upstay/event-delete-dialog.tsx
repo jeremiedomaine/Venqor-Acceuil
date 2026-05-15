@@ -52,10 +52,12 @@ export function EventDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer cet événement ?</AlertDialogTitle>
-          <AlertDialogDescription>
+      <AlertDialogContent className="border-border/70 sm:rounded-2xl">
+        <AlertDialogHeader className="space-y-2">
+          <AlertDialogTitle className="text-lg font-semibold tracking-tight">
+            Supprimer cet événement ?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm leading-relaxed">
             {event ? (
               <>
                 <span className="font-medium text-foreground">{event.title}</span> sera
@@ -67,13 +69,18 @@ export function EventDeleteDialog({
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+        <AlertDialogFooter className="gap-2 sm:gap-3">
+          <AlertDialogCancel
+            disabled={deleting}
+            className="rounded-lg border-border/80 transition-premium"
+          >
+            Annuler
+          </AlertDialogCancel>
           <Button
             variant="destructive"
             onClick={() => void confirmDelete()}
             disabled={deleting || !event}
-            className="gap-2"
+            className="gap-2 rounded-lg transition-premium"
           >
             {deleting ? <Loader2 className="size-4 animate-spin" /> : null}
             {deleting ? "Suppression…" : "Supprimer"}

@@ -6,7 +6,9 @@ import { Users, MessageSquare, Briefcase, Smartphone, Package } from "lucide-rea
 import { MessagingSheet } from "@/components/upstay/messaging-sheet"
 import { totalUnreadMessages } from "@/lib/messaging-clients"
 import { countPrestatairesActifs } from "@/lib/prestataires"
+import { dashboardPanelClass } from "@/components/upstay/dashboard-surface"
 import { countActiveDomainApps, DOMAIN_APPS_SEED } from "@/lib/domain-apps"
+import { cn } from "@/lib/utils"
 
 /**
  * Barre KPI — chiffres pensés pour la démo (ex. domaine Lauriers).
@@ -76,11 +78,14 @@ export function KpiBar() {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
         {kpis.map((kpi) => {
           const Icon = kpi.icon
-          const cardClass =
-            "group flex flex-col gap-3 rounded-md border border-border bg-card px-5 py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          const cardClass = cn(
+            "group",
+            dashboardPanelClass(true),
+            "flex flex-col gap-3.5 px-6 py-6 transition-premium hover:-translate-y-0.5",
+          )
 
           const displayValue = kpi.openMessaging
             ? String(unreadTotal)
@@ -97,25 +102,25 @@ export function KpiBar() {
             <>
               <div className="relative w-fit">
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-md ${kpi.iconBg} ${kpi.iconColor} transition-transform group-hover:scale-105`}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${kpi.iconBg} ${kpi.iconColor} transition-transform duration-200 group-hover:scale-[1.04]`}
                 >
                   <Icon className="h-5 w-5" />
                 </div>
                 {(kpi.badge && !kpi.openMessaging) || showMsgBadge ? (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-bold text-amber-800 ring-2 ring-card">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-white/80 bg-amber-100 px-1 text-[10px] font-semibold text-amber-900 shadow-sm shadow-amber-900/10">
                     {kpi.openMessaging ? unreadTotal : 5}
                   </span>
                 ) : null}
               </div>
 
               <div>
-                <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
+                <p className="text-[1.65rem] font-semibold tabular-nums leading-none tracking-tight text-foreground">
                   {displayValue}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">{kpi.sub}</p>
+                <p className="mt-2 text-xs leading-snug text-muted-foreground">{kpi.sub}</p>
               </div>
 
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 {kpi.label}
               </p>
             </>
@@ -163,10 +168,10 @@ export function KpiBar() {
 
         <Link
           href="/catalogue-extras"
-          className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-primary/20 bg-primary px-5 py-5 text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="group flex cursor-pointer flex-col items-center justify-center gap-3.5 rounded-xl border border-primary/20 bg-primary px-6 py-7 text-primary-foreground shadow-sm shadow-primary/20 transition-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/95 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Ouvrir le catalogue d'extras et la configuration"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-foreground/15 text-primary-foreground transition-transform group-hover:scale-105">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/14 text-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
             <Package className="h-5 w-5" />
           </div>
           <p className="text-center text-sm font-semibold leading-snug text-balance text-primary-foreground">

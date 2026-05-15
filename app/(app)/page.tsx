@@ -8,13 +8,13 @@ export default function Page() {
     <main className="min-h-screen bg-background">
       <HeroHeader />
 
-      <div className="mx-auto max-w-screen-xl px-6 py-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mx-auto max-w-screen-xl px-5 pb-16 pt-10 sm:px-8 sm:pt-12">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
           <EventsColumn />
           <FinanceColumn />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-10 sm:mt-12">
           <KpiBar />
         </div>
       </div>
