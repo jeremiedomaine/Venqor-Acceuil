@@ -17,6 +17,27 @@ export type DomainEventRecord = {
   bookingStatus: BookingStatus
   /** Donneur d’ordre / société */
   clientOrOrg: string
+  notes?: string | null
+}
+
+export const BOOKING_STATUS_OPTIONS: BookingStatus[] = [
+  "Option",
+  "Confirmé",
+  "Terminé",
+]
+
+export const DOMAIN_EVENT_TYPE_OPTIONS: {
+  value: DomainEventType
+  label: string
+}[] = [
+  { value: "Mariage", label: "Mariage" },
+  { value: "Seminaire", label: "Séminaire" },
+  { value: "Soiree privee", label: "Soirée privée" },
+]
+
+export function typeLabel(t: DomainEventType): string {
+  const found = DOMAIN_EVENT_TYPE_OPTIONS.find((o) => o.value === t)
+  return found?.label ?? t
 }
 
 /** Données de démo — à remplacer par API / base plus tard */

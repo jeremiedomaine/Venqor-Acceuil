@@ -10,7 +10,8 @@
     "db:migrate": "tsx scripts/run-migration.ts",
     "db:seed": "tsx scripts/seed-supabase.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "db:check": "tsx scripts/check-supabase.ts"
+    "db:check": "tsx scripts/check-supabase.ts",
+    "auth:create-user": "tsx scripts/create-auth-user.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
