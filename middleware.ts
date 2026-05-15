@@ -28,7 +28,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (user && pathname === "/login") {
+  if (
+    user &&
+    pathname === "/login" &&
+    request.nextUrl.searchParams.get("signed_out") !== "1"
+  ) {
     const next = request.nextUrl.searchParams.get("next") || "/"
     const dest = request.nextUrl.clone()
     dest.pathname = next.startsWith("/") ? next : "/"

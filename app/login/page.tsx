@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 type PageProps = {
-  searchParams: Promise<{ next?: string; error?: string }>
+  searchParams: Promise<{ next?: string; error?: string; signed_out?: string }>
 }
 
 const highlights = [
@@ -31,6 +31,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const params = await searchParams
   const nextPath = params.next?.startsWith("/") ? params.next : "/"
   const callbackError = params.error === "auth_callback"
+  const signedOut = params.signed_out === "1"
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -79,7 +80,11 @@ export default async function LoginPage({ searchParams }: PageProps) {
 
         {/* Formulaire */}
         <div className="flex flex-col items-center justify-center px-6 py-12 sm:px-10">
-          <LoginForm nextPath={nextPath} callbackError={callbackError} />
+          <LoginForm
+            nextPath={nextPath}
+            callbackError={callbackError}
+            signedOut={signedOut}
+          />
         </div>
       </div>
     </div>

@@ -6,8 +6,10 @@ import {
   getSupabaseUrl,
 } from "@/lib/supabase/env"
 
-export async function POST(request: NextRequest) {
+async function signOutAndRedirect(request: NextRequest) {
   const loginUrl = new URL("/login", request.url)
+  loginUrl.searchParams.set("signed_out", "1")
+
   let response = NextResponse.redirect(loginUrl, { status: 303 })
 
   const supabase = createServerClient<Database>(
@@ -29,4 +31,12 @@ export async function POST(request: NextRequest) {
 
   await supabase.auth.signOut()
   return response
+}
+
+export async function GET(request: NextRequest) {
+  return signOutAndRedirect(request)
+}
+
+export async function POST(request: NextRequest) {
+  return signOutAndRedirect(request)
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState, useEffect, useState } from "react"
+import { createBrowserSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { ArrowRight, Loader2, Mail, Lock, Sparkles } from "lucide-react"
 import {
@@ -17,9 +18,10 @@ const initial: AuthActionState = {}
 type LoginFormProps = {
   nextPath: string
   callbackError?: boolean
+  signedOut?: boolean
 }
 
-export function LoginForm({ nextPath, callbackError }: LoginFormProps) {
+export function LoginForm({ nextPath, callbackError, signedOut }: LoginFormProps) {
   const [mode, setMode] = useState<"signin" | "forgot">("signin")
   const [signInState, signInFormAction, signInPending] = useActionState(
     signInAction,
@@ -32,6 +34,12 @@ export function LoginForm({ nextPath, callbackError }: LoginFormProps) {
 
   const pending = signInPending || resetPending
   const state = mode === "signin" ? signInState : resetState
+
+  useEffect(() => {
+    if (!signedOut) return
+    const supabase = createBrowserSupabaseClient()
+    void supabase.auth.signOut()
+  }, [signedOut])
 
   return (
     <div className="w-full max-w-[400px]">
@@ -53,6 +61,15 @@ export function LoginForm({ nextPath, callbackError }: LoginFormProps) {
               : "Nous vous enverrons un lien de réinitialisation par email."}
           </p>
         </div>
+
+        {signedOut ? (
+          <p
+            className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+            role="status"
+          >
+            Vous êtes déconnecté.
+          </p>
+        ) : null}
 
         {callbackError ? (
           <p
