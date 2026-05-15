@@ -51,7 +51,7 @@ export async function resetPasswordAction(
   const supabase = await createServerSupabaseClient()
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    "https://venqor-acceuil.vercel.app"
+    "https://acceuil.venqor.app"
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/login`,
