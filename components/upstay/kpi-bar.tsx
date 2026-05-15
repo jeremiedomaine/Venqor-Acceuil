@@ -5,15 +5,10 @@ import { Users, Briefcase, Smartphone, Package, CalendarDays } from "lucide-reac
 import { Skeleton } from "@/components/ui/skeleton"
 import { countPrestatairesActifs } from "@/lib/prestataires"
 import { countActiveDomainApps } from "@/lib/domain-apps"
-import {
-  countUniqueClients,
-  countUpcomingEvents,
-  countVisibleCatalogueExtras,
-} from "@/lib/dashboard-stats"
+import { countUniqueClients, countUpcomingEvents } from "@/lib/dashboard-stats"
 import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
 import { usePrestatairesSync } from "@/hooks/use-prestataires-sync"
 import { useDomainAppsSync } from "@/hooks/use-domain-apps-sync"
-import { useCatalogueSync } from "@/hooks/use-catalogue-sync"
 
 const cardClass =
   "group flex flex-col gap-3 rounded-md border border-border bg-card px-5 py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
@@ -31,18 +26,16 @@ export function KpiBar() {
   const { events, loading: eventsLoading } = useDomainEventsSync()
   const { prestataires, loading: prestatairesLoading } = usePrestatairesSync()
   const { apps, loading: appsLoading } = useDomainAppsSync()
-  const { extras, loading: catalogueLoading } = useCatalogueSync()
 
   const clientCount = countUniqueClients(events)
   const upcomingCount = countUpcomingEvents(events)
   const prestatairesActifs = countPrestatairesActifs(prestataires)
   const mesAppsActives = countActiveDomainApps(apps)
-  const visibleExtras = countVisibleCatalogueExtras(extras)
 
   const kpis = [
     {
       label: "Clients",
-      sub: "donneurs d'ordre uniques",
+      sub: "au total",
       value: clientCount,
       loading: eventsLoading,
       icon: Users,
@@ -87,7 +80,7 @@ export function KpiBar() {
   ] as const
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       {kpis.map((kpi) => {
         const Icon = kpi.icon
         return (
@@ -116,22 +109,14 @@ export function KpiBar() {
       <Link
         href="/catalogue-extras"
         className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border border-primary/20 bg-primary px-5 py-5 text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label={`Catalogue : ${visibleExtras} extra${visibleExtras !== 1 ? "s" : ""} visible${visibleExtras !== 1 ? "s" : ""} — ouvrir la gestion`}
+        aria-label="Ouvrir le catalogue d'extras et la configuration"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-foreground/15 text-primary-foreground transition-transform group-hover:scale-105">
           <Package className="h-5 w-5" />
         </div>
-        {catalogueLoading ? (
-          <Skeleton className="h-5 w-28 bg-primary-foreground/20" />
-        ) : (
-          <p className="text-center text-sm font-semibold leading-snug text-balance text-primary-foreground">
-            {visibleExtras} extra{visibleExtras !== 1 ? "s" : ""} visible
-            {visibleExtras !== 1 ? "s" : ""}
-            <span className="mt-0.5 block text-xs font-normal opacity-90">
-              Gérer le catalogue
-            </span>
-          </p>
-        )}
+        <p className="text-center text-sm font-semibold leading-snug text-balance text-primary-foreground">
+          Gérer mon catalogue d&apos;extras
+        </p>
       </Link>
     </div>
   )
