@@ -17,18 +17,8 @@ export const metadata: Metadata = {
     "Tableau de bord B2B Venqor : événements, upsells et prestataires.",
   icons: {
     icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
     ],
     apple: "/apple-icon.png",
   },
@@ -44,6 +34,7 @@ export default function RootLayout({
       <body className="font-sans font-normal antialiased">
         <EdgeNavDrawer />
         {children}
+        <Toaster richColors position="top-center" />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
