@@ -1,9 +1,15 @@
 "use client"
 
-import { useMemo } from "react"
-import { TrendingUp, Camera, Tent, UtensilsCrossed, Target } from "lucide-react"
+import Link from "next/link"
+import { Package, Camera, Tent, UtensilsCrossed, Clock } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatEur } from "@/lib/domain-extras"
+import {
+  catalogueVisibleTotalHt,
+  countVisibleCatalogueExtras,
+  topCatalogueExtrasByPrice,
+} from "@/lib/dashboard-stats"
 import { useCatalogueSync } from "@/hooks/use-catalogue-sync"
 
 const ICONS = [Camera, Tent, UtensilsCrossed] as const
@@ -11,106 +17,85 @@ const ICONS = [Camera, Tent, UtensilsCrossed] as const
 export function FinanceColumn() {
   const { extras, loading } = useCatalogueSync()
 
-  const { upsells, monthLabel, totalHt, goalHt, progress } = useMemo(() => {
-    const visible = extras
-      .filter((e) => e.visible)
-      .sort((a, b) => b.priceEur - a.priceEur)
-      .slice(0, 3)
-
-    const total = visible.reduce((sum, e) => sum + e.priceEur, 0)
-    const goal = Math.round(total / 0.82) || 1
-    const pct = Math.min(100, Math.round((total / goal) * 100))
-
-    const now = new Date()
-    const monthLabel = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
-
-    const upsells = visible.map((item, i) => {
-      const Icon = ICONS[i] ?? Camera
-      const styles = [
-        { color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200/80" },
-        { color: "text-sky-600", bg: "bg-sky-50", ring: "ring-sky-200/80" },
-        { color: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200/80" },
-      ][i]!
-      return {
-        label: item.label,
-        amount: formatEur(item.priceEur),
-        icon: Icon,
-        ...styles,
-      }
-    })
-
-    return {
-      upsells,
-      monthLabel,
-      totalHt: total,
-      goalHt: goal,
-      progress: pct,
-    }
-  }, [extras])
-
-  const remaining = Math.max(0, goalHt - totalHt)
+  const visibleCount = countVisibleCatalogueExtras(extras)
+  const totalHt = catalogueVisibleTotalHt(extras)
+  const topExtras = topCatalogueExtrasByPrice(extras, 3)
+  const hasCatalogue = extras.length > 0
 
   return (
     <section className="flex flex-col overflow-hidden rounded-md border border-border bg-card shadow-sm">
       <header className="flex items-center justify-between border-b border-border px-6 py-5">
         <p className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          <Package className="h-5 w-5 text-muted-foreground" />
           <span className="text-base font-semibold tracking-tight text-foreground">
-            Revenus Upsells – Ce mois
+            Catalogue upsell
           </span>
         </p>
-        <span className="rounded-md bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary ring-1 ring-primary/20">
-          {monthLabel}
+        <span className="rounded-md border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          Données catalogue
         </span>
       </header>
 
       <article className="flex flex-1 flex-col justify-between gap-6 px-6 py-6">
         <section>
           {loading ? (
-            <Skeleton className="h-14 w-40" />
+            <Skeleton className="h-14 w-48" />
+          ) : !hasCatalogue ? (
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-foreground">Catalogue vide</p>
+              <p className="text-sm text-muted-foreground">
+                Ajoutez vos premiers extras pour les proposer à vos clients.
+              </p>
+              <Button size="sm" className="mt-2" asChild>
+                <Link href="/catalogue-extras">Créer un extra</Link>
+              </Button>
+            </div>
+          ) : visibleCount === 0 ? (
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-foreground">Aucun extra visible</p>
+              <p className="text-sm text-muted-foreground">
+                {extras.length} article{extras.length > 1 ? "s" : ""} au catalogue, tous masqués
+                côté client.
+              </p>
+              <Button size="sm" variant="outline" className="mt-2" asChild>
+                <Link href="/catalogue-extras">Gérer la visibilité</Link>
+              </Button>
+            </div>
           ) : (
             <>
-              <p className="flex items-end gap-3">
-                <span className="text-5xl font-bold tracking-tight text-primary">
-                  + {formatEur(totalHt)}
+              <p className="flex items-end gap-2">
+                <span className="text-4xl font-bold tracking-tight text-primary tabular-nums">
+                  {visibleCount}
+                </span>
+                <span className="pb-1 text-sm font-medium text-muted-foreground">
+                  extra{visibleCount > 1 ? "s" : ""} visible{visibleCount > 1 ? "s" : ""}
                 </span>
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                générés ce mois en upsells (catalogue visible)
+                Valeur catalogue HT (articles visibles) :{" "}
+                <span className="font-medium text-foreground">{formatEur(totalHt)}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ce montant reflète vos tarifs catalogue, pas des ventes enregistrées.
               </p>
             </>
           )}
 
-          <section className="mt-6">
-            <p className="mb-2 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Target className="h-4 w-4" />
-                <span className="text-xs font-medium">Objectif mensuel</span>
-              </span>
-              <span className="text-sm font-bold tracking-tight text-foreground">{progress}%</span>
+          <section className="mt-6 rounded-md border border-dashed border-border bg-muted/40 px-4 py-3">
+            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              Suivi des revenus upsell
             </p>
-            <span className="block h-2.5 w-full rounded-full bg-muted">
-              <span
-                className="block h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </span>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {loading ? (
-                <Skeleton className="inline-block h-4 w-48" />
-              ) : (
-                <>
-                  Encore <span className="font-medium text-foreground">{formatEur(remaining)}</span> pour
-                  atteindre l&apos;objectif ({formatEur(goalHt)} HT)
-                </>
-              )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Le chiffre d&apos;affaires mensuel et les ventes par extra arriveront dans une prochaine
+              version. En attendant, consultez votre catalogue pour ajuster vos offres.
             </p>
           </section>
         </section>
 
         <section>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Top extras visibles
+            Top extras visibles (prix HT)
           </p>
           {loading ? (
             <ul className="space-y-3">
@@ -120,22 +105,31 @@ export function FinanceColumn() {
                 </li>
               ))}
             </ul>
-          ) : upsells.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun extra visible dans le catalogue.</p>
+          ) : topExtras.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aucun extra visible à afficher.
+            </p>
           ) : (
             <ul className="space-y-3">
-              {upsells.map((item) => {
-                const Icon = item.icon
+              {topExtras.map((item, i) => {
+                const Icon = ICONS[i] ?? Camera
+                const styles = [
+                  { color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200/80" },
+                  { color: "text-sky-600", bg: "bg-sky-50", ring: "ring-sky-200/80" },
+                  { color: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200/80" },
+                ][i]!
                 return (
                   <li
-                    key={item.label}
-                    className={`flex items-center justify-between rounded-md px-3 py-2.5 ring-1 ${item.bg} ${item.ring}`}
+                    key={item.id}
+                    className={`flex items-center justify-between rounded-md px-3 py-2.5 ring-1 ${styles.bg} ${styles.ring}`}
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Icon className={`h-4 w-4 ${item.color}`} />
-                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <Icon className={`h-4 w-4 shrink-0 ${styles.color}`} />
+                      <span className="truncate text-sm font-medium text-foreground">{item.label}</span>
                     </span>
-                    <span className={`text-sm font-bold tabular-nums ${item.color}`}>{item.amount}</span>
+                    <span className={`shrink-0 text-sm font-bold tabular-nums ${styles.color}`}>
+                      {formatEur(item.priceEur)}
+                    </span>
                   </li>
                 )
               })}

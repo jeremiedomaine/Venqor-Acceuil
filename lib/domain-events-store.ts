@@ -9,12 +9,7 @@ import type { EventItem } from "@/lib/dashboard"
 export { getNextUpcomingEventItems }
 export { DOMAIN_EVENTS_CHANGED } from "@/hooks/use-domain-events-sync"
 
-export function countUniqueClients(events: DomainEventRecord[]): number {
-  const names = new Set(
-    events.map((e) => e.clientOrOrg.trim().toLowerCase()).filter(Boolean),
-  )
-  return names.size
-}
+export { countUniqueClients } from "@/lib/dashboard-stats"
 
 export function mapFormTypeToDomainType(eventType: string): DomainEventType {
   if (eventType === "Seminaire" || eventType === "Séminaire") return "Seminaire"
