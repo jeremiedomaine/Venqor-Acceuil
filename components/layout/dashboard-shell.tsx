@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import { DomainProvider } from "@/components/providers/domain-provider"
 import { DomainSetupRequired } from "@/components/layout/domain-setup-required"
 import { getCurrentDomain } from "@/lib/domain/server"
@@ -13,6 +14,9 @@ export async function DashboardShell({
     return <DomainProvider domain={domain}>{children}</DomainProvider>
   } catch (err) {
     if (err instanceof DomainError) {
+      if (err.code === "NO_PROFILE") {
+        redirect("/onboarding")
+      }
       return <DomainSetupRequired code={err.code} message={err.message} />
     }
     throw err

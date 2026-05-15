@@ -60,12 +60,9 @@ export async function getCurrentDomain(): Promise<VenqorDomain> {
     .maybeSingle()
 
   if (profileError || !profile?.domain_id) {
-    if (process.env.NODE_ENV === "development") {
-      return getDomainFromEnv()
-    }
     throw new DomainError(
       "NO_PROFILE",
-      "Aucun domaine n'est associé à ce compte. Contactez l'administrateur Venqor.",
+      "Créez votre espace Venqor pour commencer.",
     )
   }
 

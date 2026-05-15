@@ -20,9 +20,9 @@ export function DomainSetupRequired({
         <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         {code === "NO_PROFILE" && (
           <p className="mt-3 text-xs text-muted-foreground">
-            Un administrateur doit créer votre compte avec{" "}
-            <code className="rounded bg-muted px-1 py-0.5">npm run auth:create-user</code>{" "}
-            en précisant le slug du domaine.
+            <a href="/onboarding" className="font-medium text-primary underline-offset-4 hover:underline">
+              Créer votre espace Venqor
+            </a>
           </p>
         )}
         <Button asChild className="mt-6" variant="outline">

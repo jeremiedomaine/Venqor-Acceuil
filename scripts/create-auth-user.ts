@@ -4,7 +4,9 @@
  * Usage:
  *   npm run auth:create-user -- <email> <mot-de-passe> [slug-domaine]
  *
- * Le slug par défaut est VENQOR_DOMAIN_SLUG ou lauri-bastide.
+ * Utilisez un slug pour rattacher l'utilisateur à un domaine DÉJÀ existant.
+ * Pour un nouvel espace isolé : créez le compte dans Supabase Auth, l'utilisateur
+ * complétera /onboarding à la première connexion.
  */
 import { config } from "dotenv"
 import { resolve } from "path"

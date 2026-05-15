@@ -1,5 +1,8 @@
 /**
  * Lie tous les comptes Auth existants au domaine VENQOR_DOMAIN_ID.
+ * ⚠️ À utiliser seulement pour rattacher des opérateurs à un domaine EXISTANT
+ * (ex. Lauri-Bastide). Ne pas utiliser pour de nouveaux clients : ils passent
+ * par /onboarding et obtiennent leur propre espace.
  */
 import { config } from "dotenv"
 import { resolve } from "path"
