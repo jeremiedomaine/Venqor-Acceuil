@@ -22,11 +22,11 @@ export function HeroHeader() {
 
       <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/80 via-[#0F172A]/55 to-[#0F172A]/25" />
 
-      <div className="absolute left-0 right-0 top-0 flex items-center justify-between px-8 py-4">
+      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-8 py-4">
         <div className="rounded-md bg-white/95 px-3 py-2 shadow-sm ring-1 ring-white/30">
           <VenqorLogo size="sm" />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative z-20 flex items-center gap-3">
           <span className="rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">
             ● En ligne
           </span>
@@ -34,7 +34,8 @@ export function HeroHeader() {
         </div>
       </div>
 
-      <div className="absolute inset-0 flex flex-col justify-end px-8 pb-8">
+      {/* Ne pas intercepter les clics sur la barre du haut (déconnexion) */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end px-8 pb-8">
         <h1 className="text-balance text-3xl font-bold tracking-tight text-white">
           {domain.name}
         </h1>
