@@ -1,27 +1,31 @@
 /**
- * Applique supabase/migrations/001_initial_schema.sql
+ * Applique les fichiers supabase/migrations/*.sql (ordre alphabétique).
  * - Si DATABASE_URL est défini : exécution directe via postgres
  * - Sinon : affiche les instructions pour le SQL Editor Supabase
  */
 import { config } from "dotenv"
-import { readFileSync } from "fs"
+import { readFileSync, readdirSync } from "fs"
 import { resolve } from "path"
 
 config({ path: resolve(process.cwd(), ".env.local") })
 
-const migrationPath = resolve(
-  process.cwd(),
-  "supabase/migrations/001_initial_schema.sql",
-)
-const sql = readFileSync(migrationPath, "utf8")
+const migrationsDir = resolve(process.cwd(), "supabase/migrations")
+const files = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+
 const databaseUrl = process.env.DATABASE_URL?.trim()
 
 async function runWithPostgres() {
   const postgres = await import("postgres")
   const sqlClient = postgres.default(databaseUrl!, { max: 1 })
   try {
-    await sqlClient.unsafe(sql)
-    console.log("✓ Migration appliquée via DATABASE_URL")
+    for (const file of files) {
+      const sql = readFileSync(resolve(migrationsDir, file), "utf8")
+      await sqlClient.unsafe(sql)
+      console.log(`✓ ${file}`)
+    }
+    console.log("\n✓ Toutes les migrations appliquées via DATABASE_URL")
   } finally {
     await sqlClient.end()
   }
@@ -35,21 +39,18 @@ async function main() {
 
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
-║  Migration Supabase — action manuelle requise                    ║
+║  Migrations Supabase — action manuelle requise                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-1. Ouvre le SQL Editor :
-   https://supabase.com/dashboard/project/xumonescrukafotvlofn/sql/new
+Exécute chaque fichier dans supabase/migrations/ (ordre alphabétique) :
 
-2. Colle le contenu du fichier :
-   supabase/migrations/001_initial_schema.sql
+${files.map((f) => `  • ${f}`).join("\n")}
 
-3. Clique sur « Run »
+1. SQL Editor : https://supabase.com/dashboard/project/_/sql/new
+2. Colle le contenu de chaque fichier → Run
+3. Puis : npm run db:seed
 
-4. Puis lance : npm run db:seed
-
-Option : ajoute DATABASE_URL dans .env.local (Settings → Database → URI)
-pour exécuter automatiquement : npm run db:migrate
+Option : DATABASE_URL dans .env.local → npm run db:migrate
 `)
 }
 

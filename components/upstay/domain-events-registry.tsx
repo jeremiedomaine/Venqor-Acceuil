@@ -51,6 +51,7 @@ import {
   type DomainEventType,
 } from "@/lib/domain-events"
 import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
+import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
 
 type TemporalFilter = "all" | DomainEventTemporal
@@ -129,6 +130,7 @@ function RegistrySkeleton() {
 }
 
 export function DomainEventsRegistry() {
+  const domain = useDomain()
   const { events: allEvents, loading, error } = useDomainEventsSync()
   const [query, setQuery] = useState("")
   const [temporal, setTemporal] = useState<TemporalFilter>("all")
@@ -216,7 +218,7 @@ export function DomainEventsRegistry() {
             Registre des événements
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Domaine des lauriers de la Bastide — passés, en cours et à venir.
+            {domain.name} — passés, en cours et à venir.
           </p>
           {!loading && (
             <p className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -253,7 +255,7 @@ export function DomainEventsRegistry() {
           role="alert"
           className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
-          {error} — affichage des données de démonstration.
+          {error}
         </div>
       )}
 

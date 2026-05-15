@@ -1,9 +1,13 @@
 import type { Metadata } from "next"
 import { CatalogueExtrasManagement } from "@/components/upstay/catalogue-extras-management"
+import { getCurrentDomain } from "@/lib/domain/server"
 
-export const metadata: Metadata = {
-  title: "Catalogue d’extras – Venqor",
-  description: "Extras et configuration du catalogue — Domaine des lauriers de la Bastide.",
+export async function generateMetadata(): Promise<Metadata> {
+  const domain = await getCurrentDomain()
+  return {
+    title: `Catalogue d'extras – ${domain.name}`,
+    description: `Extras et configuration du catalogue — ${domain.name}.`,
+  }
 }
 
 export default function CatalogueExtrasPage() {

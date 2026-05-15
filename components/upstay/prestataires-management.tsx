@@ -28,6 +28,7 @@ import {
   type PrestataireRecord,
   type PrestataireStatus,
 } from "@/lib/prestataires"
+import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = "all" | PrestataireStatus
@@ -89,6 +90,7 @@ const CATEGORIES: PrestataireCategory[] = [
 ]
 
 export function PrestatairesManagement() {
+  const domain = useDomain()
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
@@ -156,7 +158,7 @@ export function PrestatairesManagement() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Prestataires du domaine</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Annuaire, statuts et suivi des partenaires — Domaine des lauriers de la Bastide.
+            Annuaire, statuts et suivi des partenaires — {domain.name}.
           </p>
         </div>
         <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>

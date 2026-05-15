@@ -25,6 +25,8 @@ import {
   type DomainApp,
   type DomainAppStatus,
 } from "@/lib/domain-apps"
+import { buildDomainAppHost } from "@/lib/domain/host"
+import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
 
 function statusBadge(s: DomainAppStatus) {
@@ -43,6 +45,7 @@ function formatCreated(iso: string) {
 }
 
 export function MesAppsManagement() {
+  const domain = useDomain()
   const [apps, setApps] = useState<DomainApp[]>(() => [...DOMAIN_APPS_SEED])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ label: "", slug: "", description: "" })
@@ -64,7 +67,7 @@ export function MesAppsManagement() {
       slug = `${slug}-${Date.now().toString(36).slice(-4)}`
     }
 
-    const host = `${slug}.lauri-bastide.venqor.app`
+    const host = buildDomainAppHost(domain.slug, slug)
     const today = new Date().toISOString().slice(0, 10)
     const next: DomainApp = {
       id: `app-${Date.now()}`,
@@ -88,7 +91,7 @@ export function MesAppsManagement() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Mes applications</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Sous-domaines et mini-sites créés pour le Domaine des lauriers de la Bastide.
+            Sous-domaines et mini-sites créés pour {domain.name}.
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
@@ -136,7 +139,7 @@ export function MesAppsManagement() {
                     <span className="font-mono text-foreground">
                       https://
                       {slugifyHostPart(form.slug || form.label) || "votre-slug"}
-                      .lauri-bastide.venqor.app
+                      .{domain.slug}.venqor.app
                     </span>
                   </p>
                 </div>

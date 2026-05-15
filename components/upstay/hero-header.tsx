@@ -1,13 +1,22 @@
+"use client"
+
 import { MapPin } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
 import { VenqorLogo } from "@/components/venqor-logo"
+import { useDomain } from "@/hooks/use-domain"
+
+const FALLBACK_COVER =
+  "https://zupimages.net/up/26/17/enyx.jpeg"
 
 export function HeroHeader() {
+  const domain = useDomain()
+  const cover = domain.coverImageUrl || FALLBACK_COVER
+
   return (
     <header className="relative h-64 w-full overflow-hidden">
       <img
-        src="https://zupimages.net/up/26/17/enyx.jpeg"
-        alt="Domaine des lauriers de la Bastide"
+        src={cover}
+        alt={domain.name}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
 
@@ -27,12 +36,14 @@ export function HeroHeader() {
 
       <div className="absolute inset-0 flex flex-col justify-end px-8 pb-8">
         <h1 className="text-balance text-3xl font-bold tracking-tight text-white">
-          Domaine des lauriers de la Bastide
+          {domain.name}
         </h1>
-        <div className="mt-2 flex items-center gap-1.5 text-white/80">
-          <MapPin className="h-4 w-4 shrink-0" />
-          <span className="text-sm font-normal">La Jourdane, 81500 Giroussens</span>
-        </div>
+        {domain.address ? (
+          <div className="mt-2 flex items-center gap-1.5 text-white/80">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-normal">{domain.address}</span>
+          </div>
+        ) : null}
       </div>
     </header>
   )

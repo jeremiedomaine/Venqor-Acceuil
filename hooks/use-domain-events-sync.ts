@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { listDomainEventsAction } from "@/app/actions/events"
-import { DOMAIN_EVENTS_SEED, type DomainEventRecord } from "@/lib/domain-events"
+import type { DomainEventRecord } from "@/lib/domain-events"
 
 export const DOMAIN_EVENTS_CHANGED = "venqor-events-changed"
 
@@ -13,7 +13,7 @@ export function useDomainEventsSync(): {
   error: string | null
   refresh: () => Promise<void>
 } {
-  const [events, setEvents] = useState<DomainEventRecord[]>(DOMAIN_EVENTS_SEED)
+  const [events, setEvents] = useState<DomainEventRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,10 +22,10 @@ export function useDomainEventsSync(): {
     setError(null)
     try {
       const rows = await listDomainEventsAction()
-      setEvents(rows.length > 0 ? rows : DOMAIN_EVENTS_SEED)
+      setEvents(rows)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de chargement")
-      setEvents(DOMAIN_EVENTS_SEED)
+      setEvents([])
     } finally {
       setLoading(false)
     }

@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import { DomainEventsRegistry } from "@/components/upstay/domain-events-registry"
+import { getCurrentDomain } from "@/lib/domain/server"
 
-export const metadata: Metadata = {
-  title: "Événements du domaine – Venqor",
-  description:
-    "Registre des événements passés et à venir — Domaine des lauriers de la Bastide.",
+export async function generateMetadata(): Promise<Metadata> {
+  const domain = await getCurrentDomain()
+  return {
+    title: `Événements – ${domain.name}`,
+    description: `Registre des événements passés et à venir — ${domain.name}.`,
+  }
 }
 
 export default function EvenementsPage() {

@@ -12,9 +12,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Venqor – Domaine des lauriers de la Bastide",
+  title: "Venqor",
   description:
-    "Tableau de bord B2B Venqor : événements, upsells et prestataires.",
+    "Tableau de bord B2B Venqor : événements, upsells et prestataires par domaine.",
   icons: {
     icon: [
       { url: "/icon.png", sizes: "512x512", type: "image/png" },

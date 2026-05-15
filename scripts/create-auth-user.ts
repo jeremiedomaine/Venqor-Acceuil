@@ -1,8 +1,10 @@
 /**
- * Crée un utilisateur Supabase Auth + profil lié au domaine Venqor.
+ * Crée un utilisateur Supabase Auth + profil lié à un domaine Venqor.
  *
  * Usage:
- *   npx tsx scripts/create-auth-user.ts votre@email.fr MotDePasseSecurise123
+ *   npm run auth:create-user -- <email> <mot-de-passe> [slug-domaine]
+ *
+ * Le slug par défaut est VENQOR_DOMAIN_SLUG ou lauri-bastide.
  */
 import { config } from "dotenv"
 import { resolve } from "path"
@@ -13,13 +15,17 @@ config({ path: resolve(process.cwd(), ".env.local") })
 
 const email = process.argv[2]?.trim()
 const password = process.argv[3]
+const domainSlug =
+  process.argv[4]?.trim() ||
+  process.env.VENQOR_DOMAIN_SLUG?.trim() ||
+  "lauri-bastide"
 
 if (!email || !password) {
   console.error(`
-Usage: npx tsx scripts/create-auth-user.ts <email> <mot-de-passe>
+Usage: npm run auth:create-user -- <email> <mot-de-passe> [slug-domaine]
 
 Exemple:
-  npx tsx scripts/create-auth-user.ts jeremie@exemple.fr MonMotDePasse123!
+  npm run auth:create-user -- jeremie@exemple.fr MonMotDePasse123! lauri-bastide
 `)
   process.exit(1)
 }
@@ -31,14 +37,32 @@ if (password.length < 8) {
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const secret = process.env.SUPABASE_SECRET_KEY!
-const domainId =
-  process.env.VENQOR_DOMAIN_ID ?? "00000000-0000-0000-0000-000000000001"
 
 const supabase = createClient<Database>(url, secret, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+async function resolveDomainId(): Promise<string> {
+  const { data, error } = await supabase
+    .from("domains")
+    .select("id, slug, name")
+    .eq("slug", domainSlug)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  if (!data) {
+    throw new Error(
+      `Domaine "${domainSlug}" introuvable. Créez-le avec : npm run domain:create -- ${domainSlug} "Nom du domaine"`,
+    )
+  }
+
+  console.log(`  Domaine : ${data.name} (${data.slug})`)
+  return data.id
+}
+
 async function main() {
+  const domainId = await resolveDomainId()
+
   const { data: created, error: createError } =
     await supabase.auth.admin.createUser({
       email,
@@ -71,13 +95,13 @@ async function main() {
       "⚠ Utilisateur créé, mais profil non enregistré:",
       profileError.message,
     )
-    console.warn("  (La connexion peut quand même fonctionner pour la V1.)")
+    console.warn("  Sans profil, l'app affichera « Configuration du domaine requise ».")
   }
 
   console.log("\n✓ Compte créé avec succès")
   console.log("  Email   :", email)
   console.log("  User ID :", userId)
-  console.log("  Domaine :", domainId)
+  console.log("  Slug    :", domainSlug)
   console.log("\nConnectez-vous sur : https://acceuil.venqor.app/login\n")
 }
 

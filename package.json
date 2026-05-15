@@ -11,7 +11,9 @@
     "db:seed": "tsx scripts/seed-supabase.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
     "db:check": "tsx scripts/check-supabase.ts",
-    "auth:create-user": "tsx scripts/create-auth-user.ts"
+    "auth:create-user": "tsx scripts/create-auth-user.ts",
+    "domain:create": "tsx scripts/create-domain.ts",
+    "domain:sync-profiles": "tsx scripts/sync-profiles.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -27,6 +27,7 @@ import {
   type DomainExtra,
   type ExtraCategory,
 } from "@/lib/domain-extras"
+import { useDomain } from "@/hooks/use-domain"
 import { cn } from "@/lib/utils"
 
 function categoryBadgeClass(c: ExtraCategory) {
@@ -40,6 +41,7 @@ function categoryBadgeClass(c: ExtraCategory) {
 }
 
 export function CatalogueExtrasManagement() {
+  const domain = useDomain()
   const [extras, setExtras] = useState<DomainExtra[]>(() => [...DOMAIN_EXTRAS_SEED])
   const [config, setConfig] = useState<CatalogueConfig>(() => ({ ...DEFAULT_CATALOGUE_CONFIG }))
   const [savedHint, setSavedHint] = useState<string | null>(null)
@@ -65,7 +67,7 @@ export function CatalogueExtrasManagement() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Catalogue d&apos;extras</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Domaine des lauriers de la Bastide — articles upsell et paramètres d&apos;affichage client.
+              {domain.name} — articles upsell et paramètres d&apos;affichage client.
             </p>
           </div>
         </div>

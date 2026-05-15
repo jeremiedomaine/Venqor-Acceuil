@@ -7,9 +7,9 @@ import {
   rowToDomainEvent,
   type EventFormInput,
 } from "@/lib/data/events"
+import { requireDomainId } from "@/lib/domain/server"
 import type { BookingStatus, DomainEventRecord } from "@/lib/domain-events"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { getVenqorDomainId } from "@/lib/supabase/env"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
 
 function revalidateEventPages() {
   revalidatePath("/")
@@ -17,8 +17,8 @@ function revalidateEventPages() {
 }
 
 export async function listDomainEventsAction(): Promise<DomainEventRecord[]> {
-  const supabase = createAdminClient()
-  const domainId = getVenqorDomainId()
+  const supabase = await createServerSupabaseClient()
+  const domainId = await requireDomainId()
 
   const { data, error } = await supabase
     .from("domain_events")
@@ -37,8 +37,8 @@ export async function listDomainEventsAction(): Promise<DomainEventRecord[]> {
 export async function createDomainEventAction(
   input: EventFormInput,
 ): Promise<DomainEventRecord> {
-  const supabase = createAdminClient()
-  const domainId = getVenqorDomainId()
+  const supabase = await createServerSupabaseClient()
+  const domainId = await requireDomainId()
 
   const { data, error } = await supabase
     .from("domain_events")
@@ -59,8 +59,8 @@ export async function updateDomainEventAction(
   id: string,
   input: EventFormInput,
 ): Promise<DomainEventRecord> {
-  const supabase = createAdminClient()
-  const domainId = getVenqorDomainId()
+  const supabase = await createServerSupabaseClient()
+  const domainId = await requireDomainId()
   const fields = formInputToDomainFields(input)
 
   const { data, error } = await supabase
@@ -81,8 +81,8 @@ export async function updateDomainEventAction(
 }
 
 export async function deleteDomainEventAction(id: string): Promise<void> {
-  const supabase = createAdminClient()
-  const domainId = getVenqorDomainId()
+  const supabase = await createServerSupabaseClient()
+  const domainId = await requireDomainId()
 
   const { error } = await supabase
     .from("domain_events")
@@ -102,8 +102,8 @@ export async function updateEventBookingStatusAction(
   id: string,
   bookingStatus: BookingStatus,
 ): Promise<DomainEventRecord> {
-  const supabase = createAdminClient()
-  const domainId = getVenqorDomainId()
+  const supabase = await createServerSupabaseClient()
+  const domainId = await requireDomainId()
 
   const { data, error } = await supabase
     .from("domain_events")
