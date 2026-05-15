@@ -7,11 +7,8 @@ import { MessagingSheet } from "@/components/upstay/messaging-sheet"
 import { totalUnreadMessages } from "@/lib/messaging-clients"
 import { countPrestatairesActifs } from "@/lib/prestataires"
 import { countActiveDomainApps, loadAllDomainApps } from "@/lib/domain-apps"
-import {
-  countUniqueClients,
-  DOMAIN_EVENTS_CHANGED,
-  loadAllDomainEvents,
-} from "@/lib/domain-events-store"
+import { countUniqueClients } from "@/lib/domain-events-store"
+import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
 
 const kpis: {
   label: string
@@ -70,23 +67,17 @@ export function KpiBar() {
   const [messagingOpen, setMessagingOpen] = useState(false)
   const unreadTotal = totalUnreadMessages()
   const [mesAppsActives, setMesAppsActives] = useState(() => countActiveDomainApps())
-  const [clientCount, setClientCount] = useState(() => countUniqueClients())
+  const { events } = useDomainEventsSync()
+  const clientCount = countUniqueClients(events)
 
   useEffect(() => {
     const syncApps = () => setMesAppsActives(countActiveDomainApps(loadAllDomainApps()))
-    const syncClients = () => setClientCount(countUniqueClients(loadAllDomainEvents()))
-    const syncAll = () => {
-      syncApps()
-      syncClients()
-    }
-    syncAll()
-    window.addEventListener("focus", syncAll)
+    syncApps()
+    window.addEventListener("focus", syncApps)
     window.addEventListener("venqor-apps-changed", syncApps)
-    window.addEventListener(DOMAIN_EVENTS_CHANGED, syncClients)
     return () => {
-      window.removeEventListener("focus", syncAll)
+      window.removeEventListener("focus", syncApps)
       window.removeEventListener("venqor-apps-changed", syncApps)
-      window.removeEventListener(DOMAIN_EVENTS_CHANGED, syncClients)
     }
   }, [])
 

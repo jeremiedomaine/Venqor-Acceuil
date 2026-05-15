@@ -79,7 +79,7 @@ function SortIndicator({
 }
 
 export function DomainEventsRegistry() {
-  const allEvents = useDomainEventsSync()
+  const { events: allEvents, loading, error } = useDomainEventsSync()
   const [query, setQuery] = useState("")
   const [temporal, setTemporal] = useState<TemporalFilter>("all")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")

@@ -1,29 +1,42 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { listDomainEventsAction } from "@/app/actions/events"
 import { DOMAIN_EVENTS_SEED, type DomainEventRecord } from "@/lib/domain-events"
-import {
-  DOMAIN_EVENTS_CHANGED,
-  loadAllDomainEvents,
-} from "@/lib/domain-events-store"
 
-/** Réagit aux créations d’événements (localStorage + event global). */
-export function useDomainEventsSync(): DomainEventRecord[] {
+export const DOMAIN_EVENTS_CHANGED = "venqor-events-changed"
+
+/** Charge les événements depuis Supabase et réagit aux créations locales. */
+export function useDomainEventsSync(): {
+  events: DomainEventRecord[]
+  loading: boolean
+  error: string | null
+  refresh: () => Promise<void>
+} {
   const [events, setEvents] = useState<DomainEventRecord[]>(DOMAIN_EVENTS_SEED)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const refresh = useCallback(() => {
-    setEvents(loadAllDomainEvents())
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const rows = await listDomainEventsAction()
+      setEvents(rows.length > 0 ? rows : DOMAIN_EVENTS_SEED)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de chargement")
+      setEvents(DOMAIN_EVENTS_SEED)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    refresh()
-    window.addEventListener(DOMAIN_EVENTS_CHANGED, refresh)
-    window.addEventListener("focus", refresh)
-    return () => {
-      window.removeEventListener(DOMAIN_EVENTS_CHANGED, refresh)
-      window.removeEventListener("focus", refresh)
-    }
+    void refresh()
+    const onChanged = () => void refresh()
+    window.addEventListener(DOMAIN_EVENTS_CHANGED, onChanged)
+    return () => window.removeEventListener(DOMAIN_EVENTS_CHANGED, onChanged)
   }, [refresh])
 
-  return events
+  return { events, loading, error, refresh }
 }

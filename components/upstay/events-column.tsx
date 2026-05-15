@@ -17,12 +17,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { getNextUpcomingEventItems } from "@/lib/domain-events"
+import { createDomainEventAction } from "@/app/actions/events"
 import {
-  createDomainEventFromForm,
-  persistDomainEvent,
-} from "@/lib/domain-events-store"
-import { useDomainEventsSync } from "@/hooks/use-domain-events-sync"
+  DOMAIN_EVENTS_CHANGED,
+  useDomainEventsSync,
+} from "@/hooks/use-domain-events-sync"
 
 const iconMap = {
   heart: Heart,
@@ -31,13 +32,14 @@ const iconMap = {
 }
 
 export function EventsColumn() {
-  const allEvents = useDomainEventsSync()
+  const { events: allEvents, loading } = useDomainEventsSync()
   const eventList = useMemo(
     () => getNextUpcomingEventItems(3, new Date(), allEvents),
     [allEvents],
   )
 
   const [open, setOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     eventType: "Mariage",
@@ -48,7 +50,7 @@ export function EventsColumn() {
     notes: "",
   })
 
-  const handleCreateEvent = (e: FormEvent<HTMLFormElement>) => {
+  const handleCreateEvent = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const title = formData.title.trim()
     const dateStart = formData.dateStart.trim()
@@ -56,8 +58,9 @@ export function EventsColumn() {
 
     if (!title || !dateStart || !guests || guests < 1) return
 
-    persistDomainEvent(
-      createDomainEventFromForm({
+    setSubmitting(true)
+    try {
+      await createDomainEventAction({
         title,
         eventType: formData.eventType,
         dateStart,
@@ -65,19 +68,26 @@ export function EventsColumn() {
         guests,
         clientOrOrg: formData.clientOrOrg,
         notes: formData.notes,
-      }),
-    )
-
-    setFormData({
-      title: "",
-      eventType: "Mariage",
-      dateStart: "",
-      dateEnd: "",
-      guests: "",
-      clientOrOrg: "",
-      notes: "",
-    })
-    setOpen(false)
+      })
+      window.dispatchEvent(new Event(DOMAIN_EVENTS_CHANGED))
+      setFormData({
+        title: "",
+        eventType: "Mariage",
+        dateStart: "",
+        dateEnd: "",
+        guests: "",
+        clientOrOrg: "",
+        notes: "",
+      })
+      setOpen(false)
+      toast.success("Événement enregistré dans la base.")
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Impossible d'enregistrer l'événement.",
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -202,7 +212,9 @@ export function EventsColumn() {
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Annuler
                   </Button>
-                  <Button type="submit">Créer</Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Création…" : "Créer"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
