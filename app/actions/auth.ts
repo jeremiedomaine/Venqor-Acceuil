@@ -33,6 +33,7 @@ export async function signInAction(
   redirect(next.startsWith("/") ? next : "/")
 }
 
+/** Préférer POST /auth/logout (formulaire déconnexion). */
 export async function signOutAction() {
   const supabase = await createServerSupabaseClient()
   await supabase.auth.signOut()
