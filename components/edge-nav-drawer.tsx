@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { VenqorLogo } from "@/components/venqor-logo"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +11,14 @@ const CLOSE_DELAY_MS = 380
 const EDGE_REVEAL_PX = 20
 
 export function EdgeNavDrawer() {
+  const pathname = usePathname()
+  if (pathname === "/login" || pathname.startsWith("/auth/")) {
+    return null
+  }
+  return <EdgeNavDrawerInner />
+}
+
+function EdgeNavDrawerInner() {
   const [open, setOpen] = useState(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 

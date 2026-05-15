@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react"
+import { UserMenu } from "@/components/auth/user-menu"
 import { VenqorLogo } from "@/components/venqor-logo"
 
 export function HeroHeader() {
@@ -20,9 +21,7 @@ export function HeroHeader() {
           <span className="rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">
             ● En ligne
           </span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 text-xs font-bold text-white ring-1 ring-white/25">
-            DL
-          </div>
+          <UserMenu />
         </div>
       </div>
 
