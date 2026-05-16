@@ -2,18 +2,52 @@
 
 import { revalidatePath } from "next/cache"
 import {
-  appFormToUpdateFields,
-  appToInsert,
   rowToDomainApp,
-  type DomainAppFormInput,
+  weddingAppFormToUpdateFields,
+  weddingAppToInsert,
+  type WeddingAppFormInput,
 } from "@/lib/data/domain-apps"
 import { getCurrentDomain, requireDomainId } from "@/lib/domain/server"
 import type { DomainApp, DomainAppStatus } from "@/lib/domain-apps"
+import { buildWeddingAppSlug } from "@/lib/wedding-apps"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 
-function revalidateAppPages() {
+function revalidateAppPages(slug?: string, domainSlug?: string) {
   revalidatePath("/mes-apps")
   revalidatePath("/")
+  if (slug && domainSlug) {
+    revalidatePath(`/espace/${domainSlug}/${slug}`)
+  }
+}
+
+async function ensureUniqueSlug(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  domainId: string,
+  baseSlug: string,
+  excludeId?: string,
+): Promise<string> {
+  let slug = baseSlug
+  let attempt = 0
+
+  while (attempt < 20) {
+    let query = supabase
+      .from("domain_apps")
+      .select("id")
+      .eq("domain_id", domainId)
+      .eq("slug", slug)
+
+    if (excludeId) {
+      query = query.neq("id", excludeId)
+    }
+
+    const { data } = await query.maybeSingle()
+    if (!data) return slug
+
+    attempt += 1
+    slug = `${baseSlug}-${attempt}`.slice(0, 56)
+  }
+
+  return `${baseSlug}-${Date.now().toString(36).slice(-4)}`.slice(0, 56)
 }
 
 export async function listDomainAppsAction(): Promise<DomainApp[]> {
@@ -24,52 +58,90 @@ export async function listDomainAppsAction(): Promise<DomainApp[]> {
     .from("domain_apps")
     .select("*")
     .eq("domain_id", domainId)
-    .order("created_at", { ascending: false })
+    .order("wedding_date", { ascending: false })
 
   if (error) {
     console.error("[listDomainAppsAction]", error.message)
-    throw new Error("Impossible de charger les applications.")
+    throw new Error("Impossible de charger les espaces mariés.")
   }
 
   return (data ?? []).map(rowToDomainApp)
 }
 
 export async function createDomainAppAction(
-  input: DomainAppFormInput,
+  input: WeddingAppFormInput,
 ): Promise<DomainApp> {
   const supabase = await createServerSupabaseClient()
   const domainId = await requireDomainId()
   const domain = await getCurrentDomain()
 
+  const partnerOne = input.partnerOne.trim()
+  const partnerTwo = input.partnerTwo.trim()
+  const weddingDate = input.weddingDate.trim()
+
+  if (!partnerOne || !partnerTwo || !weddingDate) {
+    throw new Error("Renseignez les deux prénoms et la date du mariage.")
+  }
+
+  const baseSlug = buildWeddingAppSlug(partnerOne, partnerTwo, weddingDate)
+  const uniqueSlug = await ensureUniqueSlug(supabase, domainId, baseSlug)
+
+  const insertRow = weddingAppToInsert(domainId, domain.slug, {
+    ...input,
+    partnerOne,
+    partnerTwo,
+    weddingDate,
+  })
+  insertRow.slug = uniqueSlug
+  insertRow.host = `${uniqueSlug}.${domain.slug}.venqor.app`
+
   const { data, error } = await supabase
     .from("domain_apps")
-    .insert(appToInsert(domainId, domain.slug, input))
+    .insert(insertRow)
     .select("*")
     .single()
 
   if (error) {
     console.error("[createDomainAppAction]", error.message)
-    if (error.message.includes("unique")) {
-      throw new Error("Ce sous-domaine existe déjà pour votre espace.")
-    }
-    throw new Error("Impossible de créer l'application.")
+    throw new Error("Impossible de créer l'espace mariés.")
   }
 
-  revalidateAppPages()
-  return rowToDomainApp(data)
+  const app = rowToDomainApp(data)
+  revalidateAppPages(app.slug, domain.slug)
+  return app
 }
 
 export async function updateDomainAppAction(
   id: string,
-  input: DomainAppFormInput,
+  input: WeddingAppFormInput,
 ): Promise<DomainApp> {
   const supabase = await createServerSupabaseClient()
   const domainId = await requireDomainId()
   const domain = await getCurrentDomain()
 
+  const partnerOne = input.partnerOne.trim()
+  const partnerTwo = input.partnerTwo.trim()
+  const weddingDate = input.weddingDate.trim()
+
+  if (!partnerOne || !partnerTwo || !weddingDate) {
+    throw new Error("Renseignez les deux prénoms et la date du mariage.")
+  }
+
+  const baseSlug = buildWeddingAppSlug(partnerOne, partnerTwo, weddingDate)
+  const uniqueSlug = await ensureUniqueSlug(supabase, domainId, baseSlug, id)
+
+  const updateFields = weddingAppFormToUpdateFields(domain.slug, {
+    ...input,
+    partnerOne,
+    partnerTwo,
+    weddingDate,
+  })
+  updateFields.slug = uniqueSlug
+  updateFields.host = `${uniqueSlug}.${domain.slug}.venqor.app`
+
   const { data, error } = await supabase
     .from("domain_apps")
-    .update(appFormToUpdateFields(domain.slug, input))
+    .update(updateFields)
     .eq("id", id)
     .eq("domain_id", domainId)
     .select("*")
@@ -77,11 +149,12 @@ export async function updateDomainAppAction(
 
   if (error) {
     console.error("[updateDomainAppAction]", error.message)
-    throw new Error("Impossible de modifier l'application.")
+    throw new Error("Impossible de modifier l'espace mariés.")
   }
 
-  revalidateAppPages()
-  return rowToDomainApp(data)
+  const app = rowToDomainApp(data)
+  revalidateAppPages(app.slug, domain.slug)
+  return app
 }
 
 export async function deleteDomainAppAction(id: string): Promise<void> {
@@ -96,7 +169,7 @@ export async function deleteDomainAppAction(id: string): Promise<void> {
 
   if (error) {
     console.error("[deleteDomainAppAction]", error.message)
-    throw new Error("Impossible de supprimer l'application.")
+    throw new Error("Impossible de supprimer l'espace mariés.")
   }
 
   revalidateAppPages()
@@ -108,6 +181,7 @@ export async function updateDomainAppStatusAction(
 ): Promise<DomainApp> {
   const supabase = await createServerSupabaseClient()
   const domainId = await requireDomainId()
+  const domain = await getCurrentDomain()
 
   const { data, error } = await supabase
     .from("domain_apps")
@@ -122,8 +196,9 @@ export async function updateDomainAppStatusAction(
     throw new Error("Impossible de mettre à jour le statut.")
   }
 
-  revalidateAppPages()
-  return rowToDomainApp(data)
+  const app = rowToDomainApp(data)
+  revalidateAppPages(app.slug, domain.slug)
+  return app
 }
 
 export async function countActiveDomainAppsAction(): Promise<number> {

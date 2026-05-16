@@ -120,27 +120,25 @@ async function main() {
     if (prestError) throw new Error(`prestataires: ${prestError.message}`)
   }
 
-  const { count: appsCount } = await supabase
-    .from("domain_apps")
-    .select("*", { count: "exact", head: true })
-    .eq("domain_id", domainId)
-
-  if ((appsCount ?? 0) === 0) {
-    console.log(`→ ${DOMAIN_APPS_SEED.length} apps…`)
-    const { error: appsError } = await supabase.from("domain_apps").insert(
-      DOMAIN_APPS_SEED.map((a) => ({
-        domain_id: domainId,
-        legacy_id: a.id,
-        label: a.label,
-        slug: a.slug,
-        host: a.host,
-        status: a.status,
-        description: a.description,
-        created_at: a.createdAt,
-      })),
-    )
-    if (appsError) throw new Error(`domain_apps: ${appsError.message}`)
-  }
+  console.log(`→ ${DOMAIN_APPS_SEED.length} espaces mariés (sync démo)…`)
+  const { error: appsError } = await supabase.from("domain_apps").upsert(
+    DOMAIN_APPS_SEED.map((a) => ({
+      domain_id: domainId,
+      legacy_id: a.slug,
+      label: a.label,
+      slug: a.slug,
+      host: a.host,
+      status: a.status,
+      description: a.description,
+      created_at: a.createdAt,
+      partner_one: a.partnerOne,
+      partner_two: a.partnerTwo,
+      wedding_date: a.weddingDate,
+      welcome_message: a.welcomeMessage,
+    })),
+    { onConflict: "domain_id,slug" },
+  )
+  if (appsError) throw new Error(`domain_apps: ${appsError.message}`)
 
   console.log("\n✓ Seed terminé pour le domaine", domainSlug)
 }

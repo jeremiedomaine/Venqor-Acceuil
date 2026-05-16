@@ -108,7 +108,7 @@ function EdgeNavDrawerInner() {
             href="/mes-apps"
             className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
-            Mes applications
+            Espaces mariés
           </Link>
           <Link
             href="/catalogue-extras"

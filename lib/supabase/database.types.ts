@@ -153,6 +153,10 @@ export type Database = {
           host: string
           status: string
           description: string | null
+          partner_one: string
+          partner_two: string
+          wedding_date: string
+          welcome_message: string | null
           created_at: string
           updated_at: string
         }
@@ -165,6 +169,10 @@ export type Database = {
           host: string
           status?: string
           description?: string | null
+          partner_one?: string
+          partner_two?: string
+          wedding_date?: string
+          welcome_message?: string | null
           created_at?: string
         }
         Update: Partial<Database["public"]["Tables"]["domain_apps"]["Insert"]>

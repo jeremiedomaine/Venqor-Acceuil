@@ -5,8 +5,8 @@ import { getCurrentDomain } from "@/lib/domain/server"
 export async function generateMetadata(): Promise<Metadata> {
   const domain = await getCurrentDomain()
   return {
-    title: `Mes applications – ${domain.name}`,
-    description: `Sous-domaines et applications — ${domain.name}.`,
+    title: `Espaces mariés – ${domain.name}`,
+    description: `Mini-apps personnalisées par mariage — ${domain.name}.`,
   }
 }
 

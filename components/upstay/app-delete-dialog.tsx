@@ -32,7 +32,7 @@ export function AppDeleteDialog({ app, open, onOpenChange }: AppDeleteDialogProp
     try {
       await deleteDomainAppAction(app.id)
       window.dispatchEvent(new Event(DOMAIN_APPS_CHANGED))
-      toast.success("Application supprimée.")
+      toast.success("Espace mariés supprimé.")
       onOpenChange(false)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Impossible de supprimer.")
@@ -45,12 +45,13 @@ export function AppDeleteDialog({ app, open, onOpenChange }: AppDeleteDialogProp
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer cette application ?</AlertDialogTitle>
+          <AlertDialogTitle>Supprimer cet espace mariés ?</AlertDialogTitle>
           <AlertDialogDescription>
             {app ? (
               <>
-                <span className="font-medium text-foreground">{app.label}</span> (
-                <span className="font-mono text-xs">{app.host}</span>) sera supprimée.
+                L&apos;espace{" "}
+                <span className="font-medium text-foreground">{app.label}</span> et son lien
+                invités seront définitivement supprimés.
               </>
             ) : (
               "Cette action est irréversible."

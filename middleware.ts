@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createMiddlewareSupabaseClient } from "@/lib/supabase/middleware"
 
-const PUBLIC_PATHS = ["/login", "/auth/callback", "/auth/logout", "/onboarding"]
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth/callback",
+  "/auth/logout",
+  "/onboarding",
+  "/espace",
+]
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(

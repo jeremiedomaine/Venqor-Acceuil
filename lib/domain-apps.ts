@@ -1,47 +1,60 @@
 export type DomainAppStatus = "Actif" | "Brouillon" | "Suspendu"
 
+/** Mini-app mariage rattachée au domaine — espace invités pour un couple */
 export type DomainApp = {
   id: string
-  /** Nom affiché dans le back-office */
+  /** Titre généré (ex. Mariage de Marie & Pierre — 14 juin 2026) */
   label: string
-  /** Partie hôte du sous-domaine (sans protocole), ex. upsells */
   slug: string
-  /** URL complète affichée */
   host: string
   status: DomainAppStatus
-  /** ISO yyyy-mm-dd */
   createdAt: string
+  partnerOne: string
+  partnerTwo: string
+  /** ISO yyyy-mm-dd */
+  weddingDate: string
+  welcomeMessage: string | null
   description: string | null
 }
 
-/** Données de démo pour le script de seed (`npm run db:seed`) */
-export const DOMAIN_APPS_SEED: DomainApp[] = [
+/** Exemples démo Lauriers — espaces mariés */
+export const DOMAIN_APPS_SEED: Omit<DomainApp, "id">[] = [
   {
-    id: "app-1",
-    label: "Espace réservations B2B",
-    slug: "reservations",
-    host: "reservations.lauri-bastide.venqor.app",
+    label: "Mariage de Claire & Hugo — 12 septembre 2025",
+    slug: "claire-et-hugo-12-septembre-2025",
+    host: "claire-et-hugo-12-septembre-2025.lauri-bastide.venqor.app",
+    status: "Actif",
+    createdAt: "2025-06-01",
+    partnerOne: "Claire",
+    partnerTwo: "Hugo",
+    weddingDate: "2025-09-12",
+    welcomeMessage:
+      "Bienvenue dans votre espace dédié. Retrouvez ici les informations pratiques pour votre mariage aux Lauriers.",
+    description: null,
+  },
+  {
+    label: "Mariage de Thomas & Léa — 14 mai 2025",
+    slug: "thomas-et-lea-14-mai-2025",
+    host: "thomas-et-lea-14-mai-2025.lauri-bastide.venqor.app",
     status: "Actif",
     createdAt: "2025-01-12",
-    description: "Portail partenaires et demandes de devis.",
+    partnerOne: "Thomas",
+    partnerTwo: "Léa",
+    weddingDate: "2025-05-14",
+    welcomeMessage: "Votre journée approche — tout est réuni ici pour préparer sereinement votre réception.",
+    description: null,
   },
   {
-    id: "app-2",
-    label: "Boutique upsells séjour",
-    slug: "extras",
-    host: "extras.lauri-bastide.venqor.app",
-    status: "Actif",
+    label: "Mariage de Sophie & Marc — 22 juin 2026",
+    slug: "sophie-et-marc-22-juin-2026",
+    host: "sophie-et-marc-22-juin-2026.lauri-bastide.venqor.app",
+    status: "Brouillon",
     createdAt: "2025-03-02",
-    description: "Chapiteaux, borne selfie, options pour les clients.",
-  },
-  {
-    id: "app-3",
-    label: "Calendrier public événements",
-    slug: "agenda",
-    host: "agenda.lauri-bastide.venqor.app",
-    status: "Actif",
-    createdAt: "2025-06-18",
-    description: "Vue simplifiée des dates déjà optionnées.",
+    partnerOne: "Sophie",
+    partnerTwo: "Marc",
+    weddingDate: "2026-06-22",
+    welcomeMessage: null,
+    description: null,
   },
 ]
 

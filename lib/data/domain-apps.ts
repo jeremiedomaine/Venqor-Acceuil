@@ -1,15 +1,19 @@
 import type { Database } from "@/lib/supabase/database.types"
 import type { DomainApp, DomainAppStatus } from "@/lib/domain-apps"
 import { buildDomainAppHost } from "@/lib/domain/host"
-import { slugifyDomain } from "@/lib/domain/slug"
+import {
+  buildWeddingAppLabel,
+  buildWeddingAppSlug,
+} from "@/lib/wedding-apps"
 
 export type DomainAppRow = Database["public"]["Tables"]["domain_apps"]["Row"]
 
-export type DomainAppFormInput = {
-  label: string
-  slug: string
+export type WeddingAppFormInput = {
+  partnerOne: string
+  partnerTwo: string
+  weddingDate: string
+  welcomeMessage?: string | null
   status: DomainAppStatus
-  description?: string | null
 }
 
 export const DOMAIN_APP_STATUS_OPTIONS: DomainAppStatus[] = [
@@ -26,54 +30,74 @@ export function rowToDomainApp(row: DomainAppRow): DomainApp {
     host: row.host,
     status: row.status as DomainAppStatus,
     createdAt: row.created_at.slice(0, 10),
+    partnerOne: row.partner_one ?? "",
+    partnerTwo: row.partner_two ?? "",
+    weddingDate: row.wedding_date?.slice(0, 10) ?? row.created_at.slice(0, 10),
+    welcomeMessage: row.welcome_message,
     description: row.description,
   }
 }
 
-export function recordToAppFormInput(app: DomainApp): DomainAppFormInput {
+export function recordToWeddingAppFormInput(app: DomainApp): WeddingAppFormInput {
   return {
-    label: app.label,
-    slug: app.slug,
+    partnerOne: app.partnerOne,
+    partnerTwo: app.partnerTwo,
+    weddingDate: app.weddingDate,
+    welcomeMessage: app.welcomeMessage ?? "",
     status: app.status,
-    description: app.description ?? "",
   }
 }
 
-export function emptyAppFormInput(): DomainAppFormInput {
+export function emptyWeddingAppFormInput(): WeddingAppFormInput {
   return {
-    label: "",
-    slug: "",
+    partnerOne: "",
+    partnerTwo: "",
+    weddingDate: "",
+    welcomeMessage: "",
     status: "Actif",
-    description: "",
   }
 }
 
-export function appToInsert(
+function weddingFieldsFromInput(input: WeddingAppFormInput) {
+  const partnerOne = input.partnerOne.trim()
+  const partnerTwo = input.partnerTwo.trim()
+  const weddingDate = input.weddingDate.trim()
+  const label = buildWeddingAppLabel(partnerOne, partnerTwo, weddingDate)
+  const slug = buildWeddingAppSlug(partnerOne, partnerTwo, weddingDate)
+
+  return {
+    partner_one: partnerOne,
+    partner_two: partnerTwo,
+    wedding_date: weddingDate,
+    label,
+    slug,
+    welcome_message: input.welcomeMessage?.trim() || null,
+    status: input.status,
+  }
+}
+
+export function weddingAppToInsert(
   domainId: string,
   domainSlug: string,
-  input: DomainAppFormInput,
+  input: WeddingAppFormInput,
 ): Database["public"]["Tables"]["domain_apps"]["Insert"] {
-  const slug = slugifyDomain(input.slug || input.label)
+  const fields = weddingFieldsFromInput(input)
   return {
     domain_id: domainId,
-    label: input.label.trim(),
-    slug,
-    host: buildDomainAppHost(domainSlug, slug),
-    status: input.status,
-    description: input.description?.trim() || null,
+    ...fields,
+    host: buildDomainAppHost(domainSlug, fields.slug),
+    description: null,
   }
 }
 
-export function appFormToUpdateFields(
+export function weddingAppFormToUpdateFields(
   domainSlug: string,
-  input: DomainAppFormInput,
+  input: WeddingAppFormInput,
 ) {
-  const slug = slugifyDomain(input.slug || input.label)
+  const fields = weddingFieldsFromInput(input)
   return {
-    label: input.label.trim(),
-    slug,
-    host: buildDomainAppHost(domainSlug, slug),
-    status: input.status,
-    description: input.description?.trim() || null,
+    ...fields,
+    host: buildDomainAppHost(domainSlug, fields.slug),
+    description: null,
   }
 }

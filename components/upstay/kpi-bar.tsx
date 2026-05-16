@@ -58,7 +58,7 @@ const kpis: {
     href: "/prestataires",
   },
   {
-    label: "Mes Apps",
+    label: "Espaces mariés",
     value: "3",
     sub: "actives",
     icon: Smartphone,
@@ -151,7 +151,7 @@ export function KpiBar() {
                     ? `${kpi.label} : ${displayValue} — ouvrir le registre des événements`
                     : kpi.href === "/prestataires"
                       ? `${kpi.label} : ${displayValue} — ouvrir la gestion des prestataires`
-                      : `${kpi.label} : ${displayValue} — ouvrir Mes applications`
+                      : `${kpi.label} : ${displayValue} — ouvrir les espaces mariés`
                 }
               >
                 {inner}
